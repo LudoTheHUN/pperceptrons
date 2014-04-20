@@ -1,4 +1,0 @@
-pperceptrons
-============
-
-Parallel Perceptrons
