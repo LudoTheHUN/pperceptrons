@@ -52,8 +52,8 @@
 
 (class pperceptron)
 
-(defn total-pperceptron [pperceptron input-vector]
-  (let [perceptron_value_fn (fn [perceptron] (perceptron-f perceptron input-vector))]
+(defn total-pperceptron [pperceptron z--input-vector]
+  (let [perceptron_value_fn (fn [perceptron] (perceptron-f perceptron z--input-vector))]
     (reduce +
             (map perceptron_value_fn  (m/slices pperceptron)))
   ))
@@ -174,7 +174,7 @@
 ;(defn perceptron-f-vote [mmulresult]
 ;     (if (pos? mmulresult) 1.0 -1.0))
 
-(defn pdelta-update-with-margin [pperceptron  input target-output epsilon rho--squashing-parameter eta--learning-rate mu-zeromargin-importance gamma--margin-around-zero]
+(defn pdelta-update-with-margin-BUGGED [pperceptron  input target-output epsilon rho--squashing-parameter eta--learning-rate mu-zeromargin-importance gamma--margin-around-zero]
    (let [z--input-vector (input->z--input-vector input)
 
          perceptron_value_fn (fn [perceptron] (m/mmul perceptron z--input-vector))
@@ -231,6 +231,36 @@
 
 
 
+
+(defn pdelta-update-with-margin [pperceptron  input target-output epsilon rho--squashing-parameter eta--learning-rate mu-zeromargin-importance gamma--margin-around-zero]
+   (let [z--input-vector (input->z--input-vector input)
+
+         perceptron_value_fn (fn [perceptron] (m/mmul perceptron z--input-vector))
+         per-perceptron-totals  (map perceptron_value_fn  (m/slices pperceptron))
+         out  (sp--squashing-function (reduce + (map #(if (pos? %) 1.0 -1.0) per-perceptron-totals)) rho--squashing-parameter)
+       ;  out-vs-train-abs (f-abs (- out target-output))
+         ]
+   ;;This is completely wrong!!! We need to go over each slice, ie: perceptron, and cond within that context, else we will miss some of the updates.
+
+     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Needs a full correction!
+            (m/matrix (map  (fn [perceptron perceptron_value]
+                               (cond
+                                 (and (> out (+ target-output epsilon)) (pos? perceptron_value))
+                                   (m-ops/+ perceptron (scaling-adela-fn perceptron eta--learning-rate) (m-ops/* z--input-vector -1.0 eta--learning-rate))
+                                 (and (< out (- target-output epsilon)) (neg? perceptron_value))
+                                   (m-ops/+ perceptron (scaling-adela-fn perceptron eta--learning-rate) (m-ops/* z--input-vector       eta--learning-rate))
+                                 (and (<= out (+ target-output epsilon)) (pos? perceptron_value) (< perceptron_value gamma--margin-around-zero))
+                                   (m-ops/+ perceptron (scaling-adela-fn perceptron eta--learning-rate) (m-ops/* z--input-vector  mu-zeromargin-importance  eta--learning-rate))
+                                 (and (>= out (- target-output epsilon))  (neg? perceptron_value) (< (* -1.0 gamma--margin-around-zero) perceptron_value ))
+                                   (m-ops/+ perceptron (scaling-adela-fn perceptron eta--learning-rate) (m-ops/* z--input-vector -1.0  mu-zeromargin-importance  eta--learning-rate))
+                                 :else
+                                   (m-ops/+ perceptron (scaling-adela-fn perceptron eta--learning-rate) )))
+                            pperceptron
+                            per-perceptron-totals))
+
+  ))
+
+
 pperceptron
 input
 (pdelta-update-with-margin
@@ -246,9 +276,10 @@ input
 
 
 
-(last (take 1
+(last (take 100
       (iterate (fn [x]
-(pdelta-update-with-margin
+(;pdelta-update-with-margin
+ pdelta-update-with-margin-BUGGED
     x
     input
     1.0   ;;; target-output
@@ -259,6 +290,7 @@ input
     0.5   ;;; gamma--margin-around-zero
  )) pperceptron)))
 
+[[-4.0 0.3 -0.3 0.5] [0.1 -0.2 -0.4 -0.6] [0.2 -0.1 -0.7 -0.6]]
 
 ;;TODO think about dynamics of eta--learning-rate and gamma--margin-around-zero
   ;these may need a dynamic update schedule.
