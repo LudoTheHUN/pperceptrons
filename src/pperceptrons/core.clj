@@ -245,4 +245,41 @@ input
 
 
 
+;;record and protocol 101
+
+(defprotocol my-protocol
+  (foo [this]))
+
+(extend-protocol my-protocol
+  nil
+  (foo [this] "nillbaby"))
+
+
+
+(defrecord constant-foo [value boom]
+  my-protocol
+    (foo [this] (str value this boom)))
+
+
+(def a (constant-foo. 7 33))
+
+(foo a)
+
+
+(foo nil)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
