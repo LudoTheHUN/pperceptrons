@@ -46,9 +46,10 @@
 (def pperceptron
   ;;a pp with 3 perceptrons, taken in 3dim input, -1 in last dim for the threshold.
   (m/matrix
-   [[-4.0 0.3 -0.3 0.5]
-   [0.1 -0.2 -0.4 -0.6]
-   [0.2 -0.1 -0.7 -0.6]]))
+   [[-4.0 0.3 -0.3 0.5 -0.1]
+    [0.1 -0.2 -0.4 -0.6 0.5]
+    [0.2 -0.1 -0.7 -0.6 0.2]
+    [0.2 -1.1 -0.7 -0.6 0.2]]))
 
 (class pperceptron)
 
@@ -59,9 +60,9 @@
   ))
 
 
-(total-pperceptron pperceptron  [-0.2 -0.2 10.5 -1.0])
-(total-pperceptron pperceptron  [-0.2 -0.2 -10.5 -1.0])
-(total-pperceptron pperceptron  [-0.2 -0.2 1.5 -1.0])
+(total-pperceptron pperceptron  [-0.2 -0.2 10.5 -1.0 1.1])
+(total-pperceptron pperceptron  [-0.2 -0.2 -10.5 -1.0 0.2])
+(total-pperceptron pperceptron  [-0.2 -0.2 1.5 -1.0 0.06])
 
 
 
@@ -89,8 +90,8 @@
 
 
 
-(pp-output pperceptron [-0.2 0.2 0.3] 3)
-(pp-output pperceptron [-10.2 0.2 0.6] 10)
+(pp-output pperceptron [-0.2 0.2 0.3 1.0] 3)
+(pp-output pperceptron [-10.2 0.2 0.6 1.0] 10)
 
 
 (def epsilon 0.3)   ;;how accureate we want to be, must be > 0
@@ -112,51 +113,9 @@
   )
 
 
-(defn pdelta-update [pperceptron  input target-output epsilon rho--squashing-parameter eta--learning-rate]
-   (let [z--input-vector (input->z--input-vector input)
 
-         perceptron_value_fn (fn [perceptron] (m/mmul perceptron z--input-vector))
-         per-perceptron-totals  (map perceptron_value_fn  (m/slices pperceptron))
-         out  (sp--squashing-function (reduce + (map #(if (pos? %) 1.0 -1.0) per-perceptron-totals)) rho--squashing-parameter)
-         out-vs-train-abs (f-abs (- out target-output))
-         ]
-
-       (cond
-         (<= out-vs-train-abs epsilon)   ;;pp gave correct enough answer, so nothing to do
-            pperceptron
-         (> out (+ target-output epsilon))   ;;pp is producing too higher result
-         ; ;:pperceptron_lower
-            (m/matrix (map  (fn [perceptron perceptron_value]
-                               (if (pos? perceptron_value)
-                                   (m-ops/- perceptron (m-ops/* z--input-vector eta--learning-rate))
-                                   perceptron))
-                            pperceptron
-                            per-perceptron-totals))
-         (< out (- target-output epsilon))   ;;pp is producing too lower result
-         ; :pperceptron_higer
-            (m/matrix (map  (fn [perceptron perceptron_value]
-                               (if (neg? perceptron_value)
-                                   (m-ops/+ perceptron (m-ops/* z--input-vector eta--learning-rate))
-                                   perceptron))
-                            pperceptron
-                            per-perceptron-totals))
-
-           :else
-             pperceptron)
-     ;;per-perceptron-totals
-
-  ))
-
-
-
-(def input [-1.1 -3 0.3])
+(def input [-1.1 -3 0.3 0.4])
 (m-ops/* input eta--learning-rate )
-
-
-(pdelta-update pperceptron input 0.2 0.01 10.0 0.1)
-
-
-
 
 (def gamma--margin-around-zero 0.1)
 
@@ -173,62 +132,6 @@
 
 ;(defn perceptron-f-vote [mmulresult]
 ;     (if (pos? mmulresult) 1.0 -1.0))
-
-(defn pdelta-update-with-margin-BUGGED [pperceptron  input target-output epsilon rho--squashing-parameter eta--learning-rate mu-zeromargin-importance gamma--margin-around-zero]
-   (let [z--input-vector (input->z--input-vector input)
-
-         perceptron_value_fn (fn [perceptron] (m/mmul perceptron z--input-vector))
-         per-perceptron-totals  (map perceptron_value_fn  (m/slices pperceptron))
-         out  (sp--squashing-function (reduce + (map #(if (pos? %) 1.0 -1.0) per-perceptron-totals)) rho--squashing-parameter)
-       ;  out-vs-train-abs (f-abs (- out target-output))
-         ]
-   ;;This is completely wrong!!! We need to go over each slice, ie: perceptron, and cond within that context, else we will miss some of the updates.
-
-     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Needs a full correction!
-       (cond
-       ;  (<= out-vs-train-abs epsilon)   ;;pp gave correct enough answer, so nothing to do
-       ;      (m/matrix (map  (fn [perceptron perceptron_value]  (m-ops/+ perceptron (scaling-adela-fn perceptron eta--learning-rate) )  )
-       ;                     pperceptron
-       ;                     per-perceptron-totals))
-         (> out (+ target-output epsilon))   ;;pp is producing too higher result
-         ; pperceptron must be lowered
-            (m/matrix (map  (fn [perceptron perceptron_value]
-                               (if (pos? perceptron_value)
-                                   (m-ops/+ perceptron (scaling-adela-fn perceptron eta--learning-rate) (m-ops/* z--input-vector -1.0 eta--learning-rate))
-                                   (m-ops/+ perceptron (scaling-adela-fn perceptron eta--learning-rate) ) ))
-                            pperceptron
-                            per-perceptron-totals))
-         (< out (- target-output epsilon))   ;;pp is producing too lower result
-         ; pperceptron must be made to produce higher results
-            (m/matrix (map  (fn [perceptron perceptron_value]
-                               (if (neg? perceptron_value)
-                                   (m-ops/+ perceptron (scaling-adela-fn perceptron eta--learning-rate) (m-ops/* z--input-vector       eta--learning-rate))
-                                   (m-ops/+ perceptron (scaling-adela-fn perceptron eta--learning-rate) ) ))
-                            pperceptron
-                            per-perceptron-totals))
-
-         (<= out (+ target-output epsilon) )   ;;output a bit above target ... increase all perceptrons that are close to zero
-             (m/matrix (map  (fn [perceptron perceptron_value]
-                               (if (and (pos? perceptron_value) (< perceptron_value gamma--margin-around-zero) )
-                                   (m-ops/+ perceptron (scaling-adela-fn perceptron eta--learning-rate) (m-ops/* z--input-vector  mu-zeromargin-importance  eta--learning-rate))
-                                   (m-ops/+ perceptron (scaling-adela-fn perceptron eta--learning-rate) ) ))
-                            pperceptron
-                            per-perceptron-totals))
-         (>= out (- target-output epsilon) )   ;;output a bit above target ... increase all perceptrons that are close to zero
-             (m/matrix (map  (fn [perceptron perceptron_value]
-                               (if (and (neg? perceptron_value) (< (* -1.0 gamma--margin-around-zero) perceptron_value ) )  ;;WIP factor out so its done once
-                                   (m-ops/+ perceptron (scaling-adela-fn perceptron eta--learning-rate) (m-ops/* z--input-vector -1.0  mu-zeromargin-importance  eta--learning-rate))
-                                   (m-ops/+ perceptron (scaling-adela-fn perceptron eta--learning-rate) ) ))
-                            pperceptron
-                            per-perceptron-totals))
-        :else
-                          (m/matrix (map  (fn [perceptron perceptron_value]  (m-ops/+ perceptron (scaling-adela-fn perceptron eta--learning-rate) )  )
-                            pperceptron
-                            per-perceptron-totals)))
-     ;;per-perceptron-totals
-     ;out
-  ))
-
 
 
 
@@ -274,23 +177,39 @@ input
     0.1   ;;; gamma--margin-around-zero
  )
 
-
-
+(time
+(pp-output
 (last (take 100
       (iterate (fn [x]
-(;pdelta-update-with-margin
- pdelta-update-with-margin-BUGGED
+(pdelta-update-with-margin
     x
     input
-    1.0   ;;; target-output
+    -1.0   ;;; target-output
     0.01  ;;; epsilon
-    3.0   ;;; rho--squashing-parameter
+    4.0   ;;; rho--squashing-parameter
     0.01  ;;; eta--learning-rate
     1.0   ;;; mu-zeromargin-importance
     0.5   ;;; gamma--margin-around-zero
  )) pperceptron)))
+ input 4))
+
+-0.5
+[[-0.9306841796056917 0.492038365677727 -0.12219569221147873 0.08037859586371489 0.10994474734168243]
+ [0.13141469364693065 -0.15104593538009983 -0.4375218221172563 -0.655207892292099 0.5603377886938977]
+ [0.20539833798013166 -0.10269916899006583 -0.7188941829304606 -0.6161950139403952 0.20539833798013166]
+ [0.2877169781503483 -0.5213458925113474 -0.5907778124797812 -0.5231307451455035 0.27599214403636396]]
+
+-1.0
+[[-0.9306841796056917 0.492038365677727 -0.12219569221147873 0.08037859586371489 0.10994474734168243]
+ [0.13141469364693065 -0.15104593538009983 -0.4375218221172563 -0.655207892292099 0.5603377886938977]
+ [0.20539833798013166 -0.10269916899006583 -0.7188941829304606 -0.6161950139403952 0.20539833798013166]
+ [0.3970897308852651 -0.2239405292496575 -0.620953492717377 -0.5631859138938098 0.3754316867900243]]
+
 
 [[-4.0 0.3 -0.3 0.5] [0.1 -0.2 -0.4 -0.6] [0.2 -0.1 -0.7 -0.6]]
+
+
+
 
 ;;TODO think about dynamics of eta--learning-rate and gamma--margin-around-zero
   ;these may need a dynamic update schedule.
