@@ -184,14 +184,14 @@ input
 (pdelta-update-with-margin
     x
     input
-    -0.750   ;;; target-output
+    0.9   ;;; target-output
     0.25  ;;; epsilon
-    4.0   ;;; rho--squashing-parameter
+    1   ;;; rho--squashing-parameter
     0.01  ;;; eta--learning-rate
     1.0   ;;; mu-zeromargin-importance
     0.5   ;;; gamma--margin-around-zero
  )) pperceptron)))
- input 4))
+ input 1))
 
 -0.5
 [[-0.9306841796056917 0.492038365677727 -0.12219569221147873 0.08037859586371489 0.10994474734168243]
@@ -246,6 +246,7 @@ input
 
 (defprotocol PPperceptron
   "Protocol for working with paralel perceptrons"
+  (evaluate     [pp input]  "returns the output the pperceptron for the given input")
   (train        [pp input output] "trains the paralel perceptron on one input-output example")
   (train-seq    [pp input-output-seq] "trains the paralel perceptron on a sequence of input examples with output values")
   (anneal-eta   [pp] "anneal eta, the learning rate")
@@ -253,14 +254,14 @@ input
 
 
 (defrecord pperceptron-record
-  [pperceptron               ;; the matrix holding the paralel perceptron weights which is as wide as the input +1 and as high as the number of perceptrons, n.
-   n                         ;; the total number of perceptrons in the pperceptron
-   eta--learning-rate        ;; eta--learning-rate
-   epsilon                   ;; how accureate we want to be, must be > 0
-   rho--squashing-parameter  ;; rho, The output squashing parameter. An int. If set to 1, will force the pp to have binary output (-1,+1) in n is odd. Can be at most n. Typically set to  (/ 1 (* 2 epsilon))
-   eta--learning-rate        ;; The learing rate. Typically 0.01 or less. Should be annealed.
-   mu-zeromargin-importance  ;; The zero margin parameter. Typically 1.
-   gamma--margin-around-zero ;; Margin around zero of the perceptron. Needs to be controlled for best performance, else set between 0.1 to 0.5
+  [pperceptron               ;; pperceptron ; the matrix holding the paralel perceptron weights which is as wide as the input +1 and as high as the number of perceptrons, n.
+   n                         ;; n ; the total number of perceptrons in the pperceptron
+   pwidth                    ;; size of each perceptron , width of pperceptron
+   eta--learning-rate        ;; eta--learning-rate ; The learing rate. Typically 0.01 or less. Should be annealed.
+   epsilon                   ;; epsilon ; how accureate we want to be, must be > 0
+   rho--squashing-parameter  ;; rho--squashing-parameter ; An int. If set to 1, will force the pp to have binary output (-1,+1) in n is odd. Can be at most n. Typically set to  (/ 1 (* 2 epsilon))
+   mu-zeromargin-importance  ;; mu-zeromargin-importance ; The zero margin parameter. Typically 1.
+   gamma--margin-around-zero ;; gamma--margin-around-zero ; Margin around zero of the perceptron. Needs to be controlled for best performance, else set between 0.1 to 0.5
    ]
 )
 
@@ -274,19 +275,57 @@ input
   )
 
 
-
-(def pp-a (new pperceptron-record 10 0.1))
-
-
-(train pp-a 15 01)
-
-(anneal-eta  pp-a)
-
-(train-seq pp-a 1.7)
-
-
+(defn uniform-dist-matrix-center-0
+  "Returns an array of random samples from a uniform distribution on [0,1)
+   Size may be either a number of samples or a shape vector."
+  ([size seed]
+    (let [size (if (number? size) [size] size)
+          rnd  (java.util.Random. seed)]
+      (m/compute-matrix size
+        (fn [& ixs]
+          (- (* 2.0 (.nextDouble rnd)) 1.0))))))
 
 
+(defn make-resonable-pp [inputsize  ;;do a (count input)
+                         epsilon    ;;less then 0.5, nice numers here are eg: 0.25, 0.1
+                         zerod?     ;;if true, n, number of perceptrons, will be even hence zero will be a possible output.
+                         seed       ;;some int of your choosing
+                         ]
+ (let [pwidth      (+ inputsize 1)
+       n-prez (int (/ 2 epsilon))
+       n     (cond (and zerod? (even? n-prez))
+                     n-prez
+                   (and zerod? (odd? n-prez))
+                     (+ 1 n-prez)  ;to make it even
+                   (and (not zerod?) (odd? n-prez))
+                     n-prez
+                   (and (not zerod?) (even? n-prez))
+                     (+ 1 n-prez)
+                   :else :this_should_never_happen!)
+       rho-wip  (int (/ 1 (* 2 epsilon)))
+       rho      (if (= rho-wip 0) 1 rho-wip)]
+  (new pperceptron-record
+   (uniform-dist-matrix-center-0 [n pwidth] seed)          ;; pperceptron ; the matrix holding the paralel perceptron weights which is as wide as the input +1 and as high as the number of perceptrons, n.
+   n                         ;; n ; the total number of perceptrons in the pperceptron
+   pwidth                    ;; size of each perceptron , width of pperceptron
+   0.01                      ;; eta--learning-rate ; The learing rate. Typically 0.01 or less. Should be annealed.
+   epsilon                   ;; epsilon ; how accureate we want to be, must be > 0
+   rho                       ;; rho--squashing-parameter ; An int. If set to 1, will force the pp to have binary output (-1,+1) in n is odd. Can be at most n. Typically set to  (/ 1 (* 2 epsilon))
+   1.0                       ;; mu-zeromargin-importance ; The zero margin parameter. Typically 1.
+   0.5                       ;; gamma--margin-around-zero ; Margin around zero of the perceptron. Needs to be controlled for best performance, else set between 0.1 to 0.5
+  )))
+
+
+(make-resonable-pp 1 1.0 false 42)
+
+(make-resonable-pp 1 1.0 true 42)
+
+(make-resonable-pp 1 0.10 true 42)
+
+(m/set-current-implementation :vectorz)
+(class (:pperceptron (make-resonable-pp 10 0.01 true 42)))
+
+(time (:pperceptron (make-resonable-pp 10 0.01 true 42)))
 
 ;;record and protocol 101
 
