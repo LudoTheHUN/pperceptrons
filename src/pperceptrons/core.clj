@@ -184,8 +184,8 @@ input
 (pdelta-update-with-margin
     x
     input
-    -1.0   ;;; target-output
-    0.01  ;;; epsilon
+    -0.750   ;;; target-output
+    0.25  ;;; epsilon
     4.0   ;;; rho--squashing-parameter
     0.01  ;;; eta--learning-rate
     1.0   ;;; mu-zeromargin-importance
@@ -240,6 +240,49 @@ input
        [2 2 2]
        [1 1 1]]
       )
+
+
+
+
+(defprotocol PPperceptron
+  "Protocol for working with paralel perceptrons"
+  (train        [pp input output] "trains the paralel perceptron on one input-output example")
+  (train-seq    [pp input-output-seq] "trains the paralel perceptron on a sequence of input examples with output values")
+  (anneal-eta   [pp] "anneal eta, the learning rate")
+  )
+
+
+(defrecord pperceptron-record
+  [pperceptron               ;; the matrix holding the paralel perceptron weights which is as wide as the input +1 and as high as the number of perceptrons, n.
+   n                         ;; the total number of perceptrons in the pperceptron
+   eta--learning-rate        ;; eta--learning-rate
+   epsilon                   ;; how accureate we want to be, must be > 0
+   rho--squashing-parameter  ;; rho, The output squashing parameter. An int. If set to 1, will force the pp to have binary output (-1,+1) in n is odd. Can be at most n. Typically set to  (/ 1 (* 2 epsilon))
+   eta--learning-rate        ;; The learing rate. Typically 0.01 or less. Should be annealed.
+   mu-zeromargin-importance  ;; The zero margin parameter. Typically 1.
+   gamma--margin-around-zero ;; Margin around zero of the perceptron. Needs to be controlled for best performance, else set between 0.1 to 0.5
+   ]
+)
+
+
+(extend-protocol PPperceptron
+  pperceptron-record
+  (train-seq [pp input-output-seq] (train pp 0.01 input-output-seq))
+  (train  [pp input output] (+ (:pperceptron pp) input))
+  (anneal-eta [pp] (assoc-in pp [:eta--learning-rate] 99 ))
+
+  )
+
+
+
+(def pp-a (new pperceptron-record 10 0.1))
+
+
+(train pp-a 15 01)
+
+(anneal-eta  pp-a)
+
+(train-seq pp-a 1.7)
 
 
 
