@@ -120,11 +120,11 @@
 (def gamma--margin-around-zero 0.1)
 
 
-(defn scaling-adela-fn [perceptron eta--learning-rate]
+(defn scaling-to-one-fn [perceptron eta--learning-rate]
    (m-ops/* perceptron (* -1.0 eta--learning-rate (- (m/length-squared perceptron) 1.0)))
   )
 
-(scaling-adela-fn [0.2 0.0 0.4] 0.01)
+(scaling-to-one-fn [0.2 0.0 0.4] 0.01)
 
 
 ;(defn perceptron-f-amount [a--perceptron-weight-vector z--input-vector]
@@ -149,15 +149,15 @@
             (m/matrix (map  (fn [perceptron perceptron_value]
                                (cond
                                  (and (> out (+ target-output epsilon)) (pos? perceptron_value))
-                                   (m-ops/+ perceptron (scaling-adela-fn perceptron eta--learning-rate) (m-ops/* z--input-vector -1.0 eta--learning-rate))
+                                   (m-ops/+ perceptron (scaling-to-one-fn perceptron eta--learning-rate) (m-ops/* z--input-vector -1.0 eta--learning-rate))
                                  (and (< out (- target-output epsilon)) (neg? perceptron_value))
-                                   (m-ops/+ perceptron (scaling-adela-fn perceptron eta--learning-rate) (m-ops/* z--input-vector       eta--learning-rate))
+                                   (m-ops/+ perceptron (scaling-to-one-fn perceptron eta--learning-rate) (m-ops/* z--input-vector       eta--learning-rate))
                                  (and (<= out (+ target-output epsilon)) (pos? perceptron_value) (< perceptron_value gamma--margin-around-zero))
-                                   (m-ops/+ perceptron (scaling-adela-fn perceptron eta--learning-rate) (m-ops/* z--input-vector  mu-zeromargin-importance  eta--learning-rate))
+                                   (m-ops/+ perceptron (scaling-to-one-fn perceptron eta--learning-rate) (m-ops/* z--input-vector  mu-zeromargin-importance  eta--learning-rate))
                                  (and (>= out (- target-output epsilon))  (neg? perceptron_value) (< (* -1.0 gamma--margin-around-zero) perceptron_value ))
-                                   (m-ops/+ perceptron (scaling-adela-fn perceptron eta--learning-rate) (m-ops/* z--input-vector -1.0  mu-zeromargin-importance  eta--learning-rate))
+                                   (m-ops/+ perceptron (scaling-to-one-fn perceptron eta--learning-rate) (m-ops/* z--input-vector -1.0  mu-zeromargin-importance  eta--learning-rate))
                                  :else
-                                   (m-ops/+ perceptron (scaling-adela-fn perceptron eta--learning-rate) )))
+                                   (m-ops/+ perceptron (scaling-to-one-fn perceptron eta--learning-rate) )))
                             pperceptron
                             per-perceptron-totals))
 
@@ -271,7 +271,6 @@ input
   (train-seq [pp input-output-seq] (train pp 0.01 input-output-seq))
   (train  [pp input output] (+ (:pperceptron pp) input))
   (anneal-eta [pp] (assoc-in pp [:eta--learning-rate] 99 ))
-
   )
 
 
@@ -284,6 +283,8 @@ input
       (m/compute-matrix size
         (fn [& ixs]
           (- (* 2.0 (.nextDouble rnd)) 1.0))))))
+
+;;(uniform-dist-matrix-center-0 [3 3] 42)
 
 
 (defn make-resonable-pp [inputsize  ;;do a (count input)
@@ -322,10 +323,14 @@ input
 
 (make-resonable-pp 1 0.10 true 42)
 
-(m/set-current-implementation :vectorz)
+;(m/set-current-implementation :vectorz)
 (class (:pperceptron (make-resonable-pp 10 0.01 true 42)))
 
 (time (:pperceptron (make-resonable-pp 10 0.01 true 42)))
+
+(:n (make-resonable-pp 10 0.01 true 42))
+(:pwidth (make-resonable-pp 10 0.01 true 42))
+
 
 ;;record and protocol 101
 
