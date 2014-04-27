@@ -324,7 +324,12 @@ input
         (fn [& ixs]
           (- (* 2.0 (.nextDouble rnd)) 1.0))))))
 
-;;(uniform-dist-matrix-center-0 [3 3] 42)
+;;(uniform-dist-matrix-center-0 [3 3] 42 :vectorz)
+
+ (scaling-to-one-fn (first (uniform-dist-matrix-center-0 [3 3] 42 :vectorz)) 1.0)
+(m/length-squared (second (uniform-dist-matrix-center-0 [3 3] 42 :vectorz)))
+(reduce + (map m/length-squared (m/slices (uniform-dist-matrix-center-0 [100 4] 42 :vectorz))))
+;;TODO consider constructing close to length one perceptrons from the start...
 
 
 (defn make-resonable-pp [inputsize  ;;do a (count input)
@@ -376,7 +381,9 @@ input
 
 (time (:pperceptron (make-resonable-pp 10 0.01 true 42)))
 
-(pp-output (:pperceptron (make-resonable-pp 1 0.01 true 42)) [0.3] 10)
+(time (pp-output (:pperceptron (make-resonable-pp 2 0.001 true 42)) [-0.21 0.1] 1000))
+
+(m/shape (:pperceptron (make-resonable-pp 2 0.00001 true 42)))
 
 
 (:n (make-resonable-pp 10 0.01 true 42))
