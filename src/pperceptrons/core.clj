@@ -24,12 +24,14 @@
 (m/mmul a b)
 
 
-(defn input->z--input-vector [input-vector]
+(defn input->z--input-array [input-vector]
      (m/array (conj input-vector -1.0))
   )
 
+(input->z--input-array [3 24])
+
 (class -1.0)
-(input->z--input-vector [1.0 2.0])
+(input->z--input-array [1.0 2.0])
 
 
 ;(m/set-current-implementation :persistent-vector)
@@ -60,9 +62,11 @@
 (defn total-pperceptron [pperceptron z--input-vector]
   (let [perceptron_value_fn (fn [perceptron] (perceptron-f perceptron z--input-vector))]
     (reduce +
-            (map perceptron_value_fn  (m/slices pperceptron)))
+            (doall (map perceptron_value_fn  (m/slices pperceptron))))
   ))
 
+
+(total-pperceptron pperceptron  (m/array [-0.2 -0.2 10.5 -1.0 1.1]))
 
 (total-pperceptron pperceptron  [-0.2 -0.2 10.5 -1.0 1.1])
 (total-pperceptron pperceptron  [-0.2 -0.2 -10.5 -1.0 0.2])
@@ -86,7 +90,7 @@
 
 
 (defn pp-output [pperceptron input rho--squashing-parameter]
-              (sp--squashing-function (total-pperceptron pperceptron    (input->z--input-vector input))   rho--squashing-parameter)
+              (sp--squashing-function (total-pperceptron pperceptron    (input->z--input-array input))   rho--squashing-parameter)
   )
 
 
@@ -144,18 +148,19 @@
 
 
 
-(defn pdelta-update-with-margin [pperceptron  input target-output epsilon rho--squashing-parameter eta--learning-rate mu-zeromargin-importance gamma--margin-around-zero]
-   (let [z--input-vector (input->z--input-vector input)
+(defn pdelta-update-with-margin [pperceptron matrix-implementation input target-output epsilon rho--squashing-parameter eta--learning-rate mu-zeromargin-importance gamma--margin-around-zero]
+   (let [z--input-vector (input->z--input-array input)
 
          perceptron_value_fn (fn [perceptron] (m/scalar (m/mmul perceptron z--input-vector)))   ;;had to add m/scalar here to allow other matrix implementations
-         per-perceptron-totals  (map perceptron_value_fn  (m/slices pperceptron))
-         out  (sp--squashing-function (reduce + (map #(if (pos? %) 1.0 -1.0) per-perceptron-totals)) rho--squashing-parameter)
+         per-perceptron-totals  (doall (map perceptron_value_fn  (m/slices pperceptron)))
+         out  (sp--squashing-function (reduce + (doall (map #(if (pos? %) 1.0 -1.0) per-perceptron-totals))) rho--squashing-parameter)
        ;  out-vs-train-abs (f-abs (- out target-output))
          ]
    ;;This is completely wrong!!! We need to go over each slice, ie: perceptron, and cond within that context, else we will miss some of the updates.
 
      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Needs a full correction!
-            (m/matrix (map  (fn [perceptron perceptron_value]
+            (m/matrix matrix-implementation
+                      (doall (map  (fn [perceptron perceptron_value]
                                (cond
                                  (and (> out (+ target-output epsilon)) (pos? perceptron_value))
                                    (m-ops/+ perceptron (scaling-to-one-fn perceptron eta--learning-rate) (m-ops/* z--input-vector -1.0 eta--learning-rate))
@@ -168,15 +173,15 @@
                                  :else
                                    (m-ops/+ perceptron (scaling-to-one-fn perceptron eta--learning-rate) )))
                             pperceptron
-                            per-perceptron-totals))
-
+                            per-perceptron-totals)))
   ))
 
-
+m/*matrix-implementation*
 pperceptron
 input
 (pdelta-update-with-margin
     pperceptron
+    :vectorz
     input
     0.0   ;;; target-output
     0.01  ;;; epsilon
@@ -192,6 +197,7 @@ input
       (iterate (fn [x]
 (pdelta-update-with-margin
     x
+    :vectorz
     input
     0.9   ;;; target-output
     0.25  ;;; epsilon
@@ -209,6 +215,7 @@ input
       (iterate (fn [x]
 (pdelta-update-with-margin
     x
+    :vectorz
     input
     0.9   ;;; target-output
     0.25  ;;; epsilon
@@ -281,6 +288,7 @@ input
 
 (defrecord pperceptron-record
   [pperceptron               ;; pperceptron ; the matrix holding the paralel perceptron weights which is as wide as the input +1 and as high as the number of perceptrons, n.
+   matrix-implementation     ;; As supported by core.matrix, tested against  :persistent-vector and :vectorz
    n                         ;; n ; the total number of perceptrons in the pperceptron
    pwidth                    ;; size of each perceptron , width of pperceptron
    eta--learning-rate        ;; eta--learning-rate ; The learing rate. Typically 0.01 or less. Should be annealed.
@@ -295,10 +303,7 @@ input
 (extend-protocol PPperceptron
   pperceptron-record
   (train-seq [pp input-output-seq] :WIP)
-  (train  [pp input output]
-
-
-          )
+  (train  [pp input output] :WiP2 )
   (anneal-eta [pp] (assoc-in pp [:eta--learning-rate] 99 ))
   )
 
@@ -306,10 +311,10 @@ input
 (defn uniform-dist-matrix-center-0
   "Returns an array of random samples from a uniform distribution on [0,1)
    Size may be either a number of samples or a shape vector."
-  ([size seed]
+  ([size seed matrix-implementation]
     (let [size (if (number? size) [size] size)
           rnd  (java.util.Random. seed)]
-      (m/compute-matrix size
+      (m/compute-matrix matrix-implementation size
         (fn [& ixs]
           (- (* 2.0 (.nextDouble rnd)) 1.0))))))
 
@@ -336,6 +341,7 @@ input
        rho      (if (= rho-wip 0) 1 rho-wip)]
   (new pperceptron-record
    (uniform-dist-matrix-center-0 [n pwidth] seed)          ;; pperceptron ; the matrix holding the paralel perceptron weights which is as wide as the input +1 and as high as the number of perceptrons, n.
+   :vectorz                  ;; As supported by core.matrix, tested against  :persistent-vector and :vectorz
    n                         ;; n ; the total number of perceptrons in the pperceptron
    pwidth                    ;; size of each perceptron , width of pperceptron
    0.01                      ;; eta--learning-rate ; The learing rate. Typically 0.01 or less. Should be annealed.
@@ -362,6 +368,9 @@ input
 (class (:pperceptron (make-resonable-pp 10 0.01 true 42)))
 
 (time (:pperceptron (make-resonable-pp 10 0.01 true 42)))
+
+(pp-output (:pperceptron (make-resonable-pp 1 0.01 true 42)) [0.3] 10)
+
 
 (:n (make-resonable-pp 10 0.01 true 42))
 (:pwidth (make-resonable-pp 10 0.01 true 42))
