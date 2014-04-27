@@ -29,10 +29,11 @@
 (input->z--input-vector [1.0 2.0])
 
 
-
+;(m/set-current-implementation :persistent-vector)
+;(m/set-current-implementation :vectorz)
 
 (defn perceptron-f [a--perceptron-weight-vector z--input-vector]
-     (let [mmulresult (m/mmul a--perceptron-weight-vector z--input-vector)]
+     (let [mmulresult (m/scalar (m/mmul a--perceptron-weight-vector z--input-vector))]    ;;had to add m/scalar here to allow other matrix implementations
        (if (pos? mmulresult) 1.0 -1.0))
   )
 
@@ -63,8 +64,6 @@
 (total-pperceptron pperceptron  [-0.2 -0.2 10.5 -1.0 1.1])
 (total-pperceptron pperceptron  [-0.2 -0.2 -10.5 -1.0 0.2])
 (total-pperceptron pperceptron  [-0.2 -0.2 1.5 -1.0 0.06])
-
-
 
 
 (defn sp--squashing-function [pp-total rho--squashing-parameter]
@@ -126,6 +125,8 @@
 
 (scaling-to-one-fn [0.2 0.0 0.4] 0.01)
 
+;(m/set-current-implementation :persistent-vector)
+;(m/set-current-implementation :vectorz)
 
 ;(defn perceptron-f-amount [a--perceptron-weight-vector z--input-vector]
 ;     (m/mmul a--perceptron-weight-vector z--input-vector))
@@ -138,7 +139,7 @@
 (defn pdelta-update-with-margin [pperceptron  input target-output epsilon rho--squashing-parameter eta--learning-rate mu-zeromargin-importance gamma--margin-around-zero]
    (let [z--input-vector (input->z--input-vector input)
 
-         perceptron_value_fn (fn [perceptron] (m/mmul perceptron z--input-vector))
+         perceptron_value_fn (fn [perceptron] (m/scalar (m/mmul perceptron z--input-vector)))   ;;had to add m/scalar here to allow other matrix implementations
          per-perceptron-totals  (map perceptron_value_fn  (m/slices pperceptron))
          out  (sp--squashing-function (reduce + (map #(if (pos? %) 1.0 -1.0) per-perceptron-totals)) rho--squashing-parameter)
        ;  out-vs-train-abs (f-abs (- out target-output))
@@ -176,6 +177,8 @@ input
     0.1   ;;; mu-zeromargin-importance
     0.1   ;;; gamma--margin-around-zero
  )
+
+;;#<Matrix [[-3.3824,0.25368,-0.25368,0.4228,-0.08456],[0.10018,-0.20036,-0.40072,-0.60108,0.5009],[0.20012000000000002,-0.10006000000000001,-0.7004199999999999,-0.60036,0.20012000000000002],[0.19772,-1.08746,-0.69202,-0.59316,0.19772]]>
 
 (time
 (pp-output
@@ -268,8 +271,11 @@ input
 
 (extend-protocol PPperceptron
   pperceptron-record
-  (train-seq [pp input-output-seq] (train pp 0.01 input-output-seq))
-  (train  [pp input output] (+ (:pperceptron pp) input))
+  (train-seq [pp input-output-seq] :WIP)
+  (train  [pp input output]
+
+
+          )
   (anneal-eta [pp] (assoc-in pp [:eta--learning-rate] 99 ))
   )
 
@@ -317,12 +323,18 @@ input
   )))
 
 
-(make-resonable-pp 1 1.0 false 42)
+
+
+
+(def pp-a (make-resonable-pp 1 1.0 false 42))
+
+
 
 (make-resonable-pp 1 1.0 true 42)
 
 (make-resonable-pp 1 0.10 true 42)
 
+;(m/set-current-implementation :persistent-vector)
 ;(m/set-current-implementation :vectorz)
 (class (:pperceptron (make-resonable-pp 10 0.01 true 42)))
 
@@ -330,6 +342,7 @@ input
 
 (:n (make-resonable-pp 10 0.01 true 42))
 (:pwidth (make-resonable-pp 10 0.01 true 42))
+
 
 
 ;;record and protocol 101
