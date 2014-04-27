@@ -68,7 +68,11 @@
 
 (total-pperceptron pperceptron  (m/array [-0.2 -0.2 10.5 -1.0 1.1]))
 
-(total-pperceptron pperceptron  [-0.2 -0.2 10.5 -1.0 1.1])
+(total-pperceptron [[-4.0 0.3 -0.3 0.5 -0.1]
+    [0.1 -0.2 -0.4 -0.6 0.5]
+    [0.2 -0.1 -0.7 -0.6 0.2]
+    [0.2 -1.1 -0.7 -0.6 0.2]]  [-0.2 -0.2 10.5 -1.0 1.1])
+
 (total-pperceptron pperceptron  [-0.2 -0.2 -10.5 -1.0 0.2])
 (total-pperceptron pperceptron  [-0.2 -0.2 1.5 -1.0 0.06])
 
@@ -117,7 +121,7 @@
 
 
 (defn perceptron-f [a--perceptron-weight-vector z--input-vector]
-     (let [mmulresult (m/mmul a--perceptron-weight-vector z--input-vector)]
+     (let [mmulresult (m/scalar (m/mmul a--perceptron-weight-vector z--input-vector))]
        (if (pos? mmulresult) 1.0 -1.0))
   )
 
@@ -153,7 +157,7 @@
 
          perceptron_value_fn (fn [perceptron] (m/scalar (m/mmul perceptron z--input-vector)))   ;;had to add m/scalar here to allow other matrix implementations
          per-perceptron-totals  (doall (map perceptron_value_fn  (m/slices pperceptron)))
-         out  (sp--squashing-function (reduce + (doall (map #(if (pos? %) 1.0 -1.0) per-perceptron-totals))) rho--squashing-parameter)
+         out  (sp--squashing-function (reduce + (doall (map #(if (pos? (m/scalar %)) 1.0 -1.0) per-perceptron-totals))) rho--squashing-parameter)
        ;  out-vs-train-abs (f-abs (- out target-output))
          ]
    ;;This is completely wrong!!! We need to go over each slice, ie: perceptron, and cond within that context, else we will miss some of the updates.
@@ -216,6 +220,7 @@ input
 (pdelta-update-with-margin
     x
     :vectorz
+    ;:persistent-vector
     input
     0.9   ;;; target-output
     0.25  ;;; epsilon
@@ -226,13 +231,14 @@ input
  )) pperceptron)))
  input 1))
 
--0.5
+
+;-0.5
 [[-0.9306841796056917 0.492038365677727 -0.12219569221147873 0.08037859586371489 0.10994474734168243]
  [0.13141469364693065 -0.15104593538009983 -0.4375218221172563 -0.655207892292099 0.5603377886938977]
  [0.20539833798013166 -0.10269916899006583 -0.7188941829304606 -0.6161950139403952 0.20539833798013166]
  [0.2877169781503483 -0.5213458925113474 -0.5907778124797812 -0.5231307451455035 0.27599214403636396]]
 
--1.0
+;-1.0
 [[-0.9306841796056917 0.492038365677727 -0.12219569221147873 0.08037859586371489 0.10994474734168243]
  [0.13141469364693065 -0.15104593538009983 -0.4375218221172563 -0.655207892292099 0.5603377886938977]
  [0.20539833798013166 -0.10269916899006583 -0.7188941829304606 -0.6161950139403952 0.20539833798013166]
@@ -326,7 +332,8 @@ input
                          zerod?     ;;if true, n, number of perceptrons, will be even hence zero will be a possible output.
                          seed       ;;some int of your choosing
                          ]
- (let [pwidth      (+ inputsize 1)
+ (let [matrix-implementation  :vectorz
+       pwidth      (+ inputsize 1)
        n-prez (int (/ 2 epsilon))
        n     (cond (and zerod? (even? n-prez))
                      n-prez
@@ -340,8 +347,8 @@ input
        rho-wip  (int (/ 1 (* 2 epsilon)))
        rho      (if (= rho-wip 0) 1 rho-wip)]
   (new pperceptron-record
-   (uniform-dist-matrix-center-0 [n pwidth] seed)          ;; pperceptron ; the matrix holding the paralel perceptron weights which is as wide as the input +1 and as high as the number of perceptrons, n.
-   :vectorz                  ;; As supported by core.matrix, tested against  :persistent-vector and :vectorz
+   (uniform-dist-matrix-center-0 [n pwidth] seed matrix-implementation)   ;; pperceptron ; the matrix holding the paralel perceptron weights which is as wide as the input +1 and as high as the number of perceptrons, n.
+   matrix-implementation     ;; As supported by core.matrix, tested against  :persistent-vector and :vectorz
    n                         ;; n ; the total number of perceptrons in the pperceptron
    pwidth                    ;; size of each perceptron , width of pperceptron
    0.01                      ;; eta--learning-rate ; The learing rate. Typically 0.01 or less. Should be annealed.
