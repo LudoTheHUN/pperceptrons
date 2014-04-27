@@ -3,6 +3,9 @@
             [clojure.core.matrix.operators :as m-ops]))
 
 
+;(m/set-current-implementation :persistent-vector)
+;(m/set-current-implementation :vectorz)
+
 ;;Resources
 ;https://github.com/mikera/core.matrix
 ;https://github.com/mikera/core.matrix/blob/master/src/main/clojure/clojure/core/matrix/examples.clj
@@ -39,7 +42,7 @@
 
 ;; we will need to re-implement the above in the learning steps so that we don't compute the same values more then once
 
-(perceptron-f a b)
+;;(perceptron-f a b)
 
 
 ;pperceptron is made of many a--perceptron-weight-vectors
@@ -87,7 +90,10 @@
   )
 
 
-
+(pp-output [[-4.0 0.3 -0.3 0.5 -0.1]
+    [0.1 -0.2 -0.4 -0.6 0.5]
+    [0.2 -0.1 -0.7 -0.6 0.2]
+    [0.2 -1.1 -0.7 -0.6 0.2]] [-0.2 0.2 0.3 1.0] 3)
 
 (pp-output pperceptron [-0.2 0.2 0.3 1.0] 3)
 (pp-output pperceptron [-10.2 0.2 0.6 1.0] 10)
@@ -113,8 +119,11 @@
 
 
 
-(def input [-1.1 -3 0.3 0.4])
+(def input  [-1.1 -3 0.3 0.4])
 (m-ops/* input eta--learning-rate )
+
+
+
 
 (def gamma--margin-around-zero 0.1)
 
@@ -125,8 +134,7 @@
 
 (scaling-to-one-fn [0.2 0.0 0.4] 0.01)
 
-;(m/set-current-implementation :persistent-vector)
-;(m/set-current-implementation :vectorz)
+
 
 ;(defn perceptron-f-amount [a--perceptron-weight-vector z--input-vector]
 ;     (m/mmul a--perceptron-weight-vector z--input-vector))
@@ -180,9 +188,24 @@ input
 
 ;;#<Matrix [[-3.3824,0.25368,-0.25368,0.4228,-0.08456],[0.10018,-0.20036,-0.40072,-0.60108,0.5009],[0.20012000000000002,-0.10006000000000001,-0.7004199999999999,-0.60036,0.20012000000000002],[0.19772,-1.08746,-0.69202,-0.59316,0.19772]]>
 
+(def a_pp-learnt (last (take 1000
+      (iterate (fn [x]
+(pdelta-update-with-margin
+    x
+    input
+    0.9   ;;; target-output
+    0.25  ;;; epsilon
+    1   ;;; rho--squashing-parameter
+    0.01  ;;; eta--learning-rate
+    1.0   ;;; mu-zeromargin-importance
+    0.5   ;;; gamma--margin-around-zero
+ )) pperceptron))))
+
+(pp-output a_pp-learnt  input 1)
+
 (time
 (pp-output
-(last (take 100
+(last (take 1000
       (iterate (fn [x]
 (pdelta-update-with-margin
     x
