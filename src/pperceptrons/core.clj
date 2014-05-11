@@ -95,8 +95,7 @@
 
 
 (defn pp-output [pperceptron input rho--squashing-parameter]
-              (sp--squashing-function (total-pperceptron pperceptron    (input->z--input-array input))   rho--squashing-parameter)
-  )
+              (sp--squashing-function (total-pperceptron pperceptron    (input->z--input-array input))   rho--squashing-parameter))
 
 
 (pp-output [[-4.0 0.3 -0.3 0.5 -0.1]
@@ -223,7 +222,7 @@ input
     input
     0.9   ;;; target-output
     0.25  ;;; epsilon
-    1   ;;; rho--squashing-parameter
+    1     ;;; rho--squashing-parameter
     0.01  ;;; eta--learning-rate
     1.0   ;;; mu-zeromargin-importance
     0.5   ;;; gamma--margin-around-zero
@@ -284,7 +283,7 @@ input
 
 (defprotocol PPperceptron
   "Protocol for working with paralel perceptrons"
-  (evaluate     [pp input]  "returns the output the pperceptron for the given input")
+  (read-out     [pp input]  "returns the output the pperceptron for the given input")
   (train        [pp input output] "trains the paralel perceptron on one input-output example")
   (train-seq    [pp input-output-seq] "trains the paralel perceptron on a sequence of input examples with output values, shaped as [[inputs output]...]")
   (anneal-eta   [pp] "anneal eta, the learning rate")
@@ -295,7 +294,7 @@ input
   [pperceptron               ;; pperceptron ; the matrix holding the paralel perceptron weights which is as wide as the input +1 and as high as the number of perceptrons, n.
    matrix-implementation     ;; As supported by core.matrix, tested against  :persistent-vector and :vectorz
    n                         ;; n ; the total number of perceptrons in the pperceptron
-   pwidth                    ;; size of each perceptron , width of pperceptron
+   pwidth                    ;; size of each perceptron , width of pperceptron, +1 to size of input
    eta--learning-rate        ;; eta--learning-rate ; The learing rate. Typically 0.01 or less. Should be annealed.
    epsilon                   ;; epsilon ; how accureate we want to be, must be > 0
    rho--squashing-parameter  ;; rho--squashing-parameter ; An int. If set to 1, will force the pp to have binary output (-1,+1) in n is odd. Can be at most n. Typically set to  (/ 1 (* 2 epsilon))
@@ -305,10 +304,25 @@ input
 )
 
 
+;;TODO hookup training function
 (extend-protocol PPperceptron
   pperceptron-record
+  (read-out [pp input]
+     (pp-output (:pperceptron pp) input (:rho--squashing-parameter pp)))
+  (train [pp input output]
+      (assoc pp :pperceptron
+        (pdelta-update-with-margin
+           (:pperceptron pp)
+           (:matrix-implementation pp)
+           input
+           output ;; target-output
+           (:epsilon pp)
+           (:rho--squashing-parameter pp)
+           (:eta--learning-rate pp)
+           (:mu-zeromargin-importance pp)
+           (:gamma--margin-around-zero pp)
+          )))
   (train-seq [pp input-output-seq] :WIP)
-  (train  [pp input output] :WiP2 )
   (anneal-eta [pp] (assoc-in pp [:eta--learning-rate] 99 ))
   )
 
@@ -327,20 +341,15 @@ input
 ;;(uniform-dist-matrix-center-0 :vectorz [3 3] 42)
 ;;(imp/get-implementation-key (uniform-dist-matrix-center-0 :vectorz [3] 42))
 
+;;TODO DONE  constructing close to length one perceptrons from the start...
 ;;TODO take the random output and assuming it's a pperceptron, scale each perceptron towards length 1.0
 (defn scale-to-size-one
-([pperceptron]  (scale-to-size-one (imp/get-implementation-key pperceptron) pperceptron ))
-([matrix-implementation pperceptron]
-  (m/matrix matrix-implementation (map (fn [perceptron] (m/div perceptron (m/length perceptron)))   (m/slices pperceptron)) )))
+ ([pperceptron] (scale-to-size-one (imp/get-implementation-key pperceptron) pperceptron ))
+ ([matrix-implementation pperceptron]
+   (m/matrix matrix-implementation (map (fn [perceptron] (m/div perceptron (m/length perceptron)))   (m/slices pperceptron)) )))
 
- (map m/length (m/slices (scale-to-size-one (uniform-dist-matrix-center-0 :vectorz [3 100] 42))))
+#_(time (map m/length (m/slices (scale-to-size-one (uniform-dist-matrix-center-0 :vectorz [5 100] 42)))))
 
-
-(scaling-to-one-fn (first (uniform-dist-matrix-center-0 :vectorz [3 3] 42 )) 1.0)
-(m/length-squared (second (uniform-dist-matrix-center-0 :vectorz [3 3] 42 )))
-(reduce + (map m/length-squared (m/slices (uniform-dist-matrix-center-0 :vectorz [100 4] 42 ))))
-(reduce + (map (fn [x] (m/length-squared(scaling-to-one-fn x 1.0))) (m/slices (uniform-dist-matrix-center-0 :vectorz [100 4] 42))))
-;;TODO consider constructing close to length one perceptrons from the start...
 
 
 (defn make-resonable-pp [inputsize  ;;do a (count input)
@@ -366,8 +375,8 @@ input
    (scale-to-size-one (uniform-dist-matrix-center-0 matrix-implementation [n pwidth] seed))   ;; pperceptron ; the matrix holding the paralel perceptron weights which is as wide as the input +1 and as high as the number of perceptrons, n.
    matrix-implementation     ;; As supported by core.matrix, tested against  :persistent-vector and :vectorz
    n                         ;; n ; the total number of perceptrons in the pperceptron
-   pwidth                    ;; size of each perceptron , width of pperceptron
-   0.01                      ;; eta--learning-rate ; The learing rate. Typically 0.01 or less. Should be annealed.
+   pwidth                    ;; size of each perceptron , width of pperceptron, +1 to size of input
+   0.01                      ;; eta--learning-rate ; The learing rate. Typically 0.01 or less. Should be annealed or be dynamicall updated based on error function
    epsilon                   ;; epsilon ; how accureate we want to be, must be > 0
    rho                       ;; rho--squashing-parameter ; An int. If set to 1, will force the pp to have binary output (-1,+1) in n is odd. Can be at most n. Typically set to  (/ 1 (* 2 epsilon))
    1.0                       ;; mu-zeromargin-importance ; The zero margin parameter. Typically 1.
@@ -380,11 +389,28 @@ input
 
 (def pp-a (make-resonable-pp 1 1.0 false 42))
 
-
-
 (make-resonable-pp 1 1.0 true 42)
 
-(make-resonable-pp 1 0.10 true 42)
+(read-out (make-resonable-pp 2 0.27 true 42) [2 1])
+(train (make-resonable-pp 2 0.27 true 42) [2 1] 1)
+
+(time
+(read-out
+(reduce (fn [xs [in out]] (train xs in out)) (make-resonable-pp 2 0.27 true 42) (repeat 100 [[2 1] 1])  )
+[2 1])
+)
+
+[0.6516616558174498,0.5246870281514043,-0.5477596268683069],
+[-0.18593836403808622,0.5749282725464294,0.7967963387469613],
+[-0.21376830945425768,-0.8922118302823092,-0.3978205102913648],
+[0.5549199829079453,0.8225235171640101,-0.12457478188458596],
+[0.5900107775778086,-0.26780756812858175,-0.7616865423486782],
+[0.7468354261251801,-0.42599196260929023,0.5106541822885579],
+[-0.6133673546743034,0.5202591780846183,0.5942313303544274],
+[0.4679312985708796,0.3924670063715887,0.7918395979110127]
+
+
+[0.6516616558174498,0.5246870281514043,-0.5477596268683069],
 
 ;(m/set-current-implementation :persistent-vector)
 ;(m/set-current-implementation :vectorz)
@@ -396,10 +422,10 @@ input
 
 (m/shape (:pperceptron (make-resonable-pp 2 0.00001 true 42)))
 
-
-(:n (make-resonable-pp 10 0.01 true 42))
-(:pwidth (make-resonable-pp 10 0.01 true 42))
-
+(:n (make-resonable-pp 10 0.1 true 42))
+(:pwidth (make-resonable-pp 10 0.1 true 42))
+(:rho--squashing-parameter (make-resonable-pp 10 0.1 true 42))
+(pp-output (:pperceptron (make-resonable-pp 10 0.1 true 42)) [0 0 5.337  0 0 -10 10 0 0  0]     (:rho--squashing-parameter (make-resonable-pp 10 0.1 true 42)))
 
 
 ;;record and protocol 101
