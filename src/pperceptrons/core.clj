@@ -1,6 +1,7 @@
 (ns pperceptrons.core
   (:require [clojure.core.matrix :as m]
-            [clojure.core.matrix.operators :as m-ops]))
+            [clojure.core.matrix.operators :as m-ops]
+            [clojure.core.matrix.implementations :as imp]))
 
 
 ;(m/set-current-implementation :persistent-vector)
@@ -153,32 +154,30 @@
 
 
 (defn pdelta-update-with-margin [pperceptron matrix-implementation input target-output epsilon rho--squashing-parameter eta--learning-rate mu-zeromargin-importance gamma--margin-around-zero]
-   (let [z--input-vector (input->z--input-array input)
+  (let [z--input-vector (input->z--input-array input)
 
-         perceptron_value_fn (fn [perceptron] (m/scalar (m/mmul perceptron z--input-vector)))   ;;had to add m/scalar here to allow other matrix implementations
-         per-perceptron-totals  (doall (map perceptron_value_fn  (m/slices pperceptron)))
-         out  (sp--squashing-function (reduce + (doall (map #(if (pos? (m/scalar %)) 1.0 -1.0) per-perceptron-totals))) rho--squashing-parameter)
-       ;  out-vs-train-abs (f-abs (- out target-output))
-         ]
-   ;;This is completely wrong!!! We need to go over each slice, ie: perceptron, and cond within that context, else we will miss some of the updates.
+       perceptron_value_fn (fn [perceptron] (m/scalar (m/mmul perceptron z--input-vector)))   ;;had to add m/scalar here to allow other matrix implementations
+       per-perceptron-totals  (doall (map perceptron_value_fn  (m/slices pperceptron)))
+       out  (sp--squashing-function (reduce + (doall (map #(if (pos? (m/scalar %)) 1.0 -1.0) per-perceptron-totals))) rho--squashing-parameter)
+     ;  out-vs-train-abs (f-abs (- out target-output))
+       ]
+    (m/matrix matrix-implementation
+              (doall (map  (fn [perceptron perceptron_value]
+                       (cond
+                         (and (> out (+ target-output epsilon)) (pos? perceptron_value))
+                           (m-ops/+ perceptron (scaling-to-one-fn perceptron eta--learning-rate) (m-ops/* z--input-vector -1.0 eta--learning-rate))
+                         (and (< out (- target-output epsilon)) (neg? perceptron_value))
+                           (m-ops/+ perceptron (scaling-to-one-fn perceptron eta--learning-rate) (m-ops/* z--input-vector       eta--learning-rate))
+                         (and (<= out (+ target-output epsilon)) (pos? perceptron_value) (< perceptron_value gamma--margin-around-zero))
+                           (m-ops/+ perceptron (scaling-to-one-fn perceptron eta--learning-rate) (m-ops/* z--input-vector  mu-zeromargin-importance  eta--learning-rate))
+                         (and (>= out (- target-output epsilon))  (neg? perceptron_value) (< (* -1.0 gamma--margin-around-zero) perceptron_value ))
+                           (m-ops/+ perceptron (scaling-to-one-fn perceptron eta--learning-rate) (m-ops/* z--input-vector -1.0  mu-zeromargin-importance  eta--learning-rate))
+                         :else
+                           (m-ops/+ perceptron (scaling-to-one-fn perceptron eta--learning-rate) )))
+                    pperceptron
+                    per-perceptron-totals)))))
 
-     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Needs a full correction!
-            (m/matrix matrix-implementation
-                      (doall (map  (fn [perceptron perceptron_value]
-                               (cond
-                                 (and (> out (+ target-output epsilon)) (pos? perceptron_value))
-                                   (m-ops/+ perceptron (scaling-to-one-fn perceptron eta--learning-rate) (m-ops/* z--input-vector -1.0 eta--learning-rate))
-                                 (and (< out (- target-output epsilon)) (neg? perceptron_value))
-                                   (m-ops/+ perceptron (scaling-to-one-fn perceptron eta--learning-rate) (m-ops/* z--input-vector       eta--learning-rate))
-                                 (and (<= out (+ target-output epsilon)) (pos? perceptron_value) (< perceptron_value gamma--margin-around-zero))
-                                   (m-ops/+ perceptron (scaling-to-one-fn perceptron eta--learning-rate) (m-ops/* z--input-vector  mu-zeromargin-importance  eta--learning-rate))
-                                 (and (>= out (- target-output epsilon))  (neg? perceptron_value) (< (* -1.0 gamma--margin-around-zero) perceptron_value ))
-                                   (m-ops/+ perceptron (scaling-to-one-fn perceptron eta--learning-rate) (m-ops/* z--input-vector -1.0  mu-zeromargin-importance  eta--learning-rate))
-                                 :else
-                                   (m-ops/+ perceptron (scaling-to-one-fn perceptron eta--learning-rate) )))
-                            pperceptron
-                            per-perceptron-totals)))
-  ))
+
 
 m/*matrix-implementation*
 pperceptron
@@ -287,7 +286,7 @@ input
   "Protocol for working with paralel perceptrons"
   (evaluate     [pp input]  "returns the output the pperceptron for the given input")
   (train        [pp input output] "trains the paralel perceptron on one input-output example")
-  (train-seq    [pp input-output-seq] "trains the paralel perceptron on a sequence of input examples with output values")
+  (train-seq    [pp input-output-seq] "trains the paralel perceptron on a sequence of input examples with output values, shaped as [[inputs output]...]")
   (anneal-eta   [pp] "anneal eta, the learning rate")
   )
 
@@ -317,18 +316,30 @@ input
 (defn uniform-dist-matrix-center-0
   "Returns an array of random samples from a uniform distribution on [0,1)
    Size may be either a number of samples or a shape vector."
-  ([size seed matrix-implementation]
+  ([size seed] (uniform-dist-matrix-center-0 (m/current-implementation) size seed))
+  ([matrix-implementation size seed]
     (let [size (if (number? size) [size] size)
           rnd  (java.util.Random. seed)]
       (m/compute-matrix matrix-implementation size
         (fn [& ixs]
           (- (* 2.0 (.nextDouble rnd)) 1.0))))))
 
-;;(uniform-dist-matrix-center-0 [3 3] 42 :vectorz)
+;;(uniform-dist-matrix-center-0 :vectorz [3 3] 42)
+;;(imp/get-implementation-key (uniform-dist-matrix-center-0 :vectorz [3] 42))
 
- (scaling-to-one-fn (first (uniform-dist-matrix-center-0 [3 3] 42 :vectorz)) 1.0)
-(m/length-squared (second (uniform-dist-matrix-center-0 [3 3] 42 :vectorz)))
-(reduce + (map m/length-squared (m/slices (uniform-dist-matrix-center-0 [100 4] 42 :vectorz))))
+;;TODO take the random output and assuming it's a pperceptron, scale each perceptron towards length 1.0
+(defn scale-to-size-one
+([pperceptron]  (scale-to-size-one (imp/get-implementation-key pperceptron) pperceptron ))
+([matrix-implementation pperceptron]
+  (m/matrix matrix-implementation (map (fn [perceptron] (m/div perceptron (m/length perceptron)))   (m/slices pperceptron)) )))
+
+ (map m/length (m/slices (scale-to-size-one (uniform-dist-matrix-center-0 :vectorz [3 100] 42))))
+
+
+(scaling-to-one-fn (first (uniform-dist-matrix-center-0 :vectorz [3 3] 42 )) 1.0)
+(m/length-squared (second (uniform-dist-matrix-center-0 :vectorz [3 3] 42 )))
+(reduce + (map m/length-squared (m/slices (uniform-dist-matrix-center-0 :vectorz [100 4] 42 ))))
+(reduce + (map (fn [x] (m/length-squared(scaling-to-one-fn x 1.0))) (m/slices (uniform-dist-matrix-center-0 :vectorz [100 4] 42))))
 ;;TODO consider constructing close to length one perceptrons from the start...
 
 
@@ -352,7 +363,7 @@ input
        rho-wip  (int (/ 1 (* 2 epsilon)))
        rho      (if (= rho-wip 0) 1 rho-wip)]
   (new pperceptron-record
-   (uniform-dist-matrix-center-0 [n pwidth] seed matrix-implementation)   ;; pperceptron ; the matrix holding the paralel perceptron weights which is as wide as the input +1 and as high as the number of perceptrons, n.
+   (scale-to-size-one (uniform-dist-matrix-center-0 matrix-implementation [n pwidth] seed))   ;; pperceptron ; the matrix holding the paralel perceptron weights which is as wide as the input +1 and as high as the number of perceptrons, n.
    matrix-implementation     ;; As supported by core.matrix, tested against  :persistent-vector and :vectorz
    n                         ;; n ; the total number of perceptrons in the pperceptron
    pwidth                    ;; size of each perceptron , width of pperceptron
