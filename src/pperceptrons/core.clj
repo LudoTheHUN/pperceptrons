@@ -7,6 +7,7 @@
 ;(m/set-current-implementation :persistent-vector)
 ;(m/set-current-implementation :vectorz)
 
+
 ;;Resources
 ;https://github.com/mikera/core.matrix
 ;https://github.com/mikera/core.matrix/blob/master/src/main/clojure/clojure/core/matrix/examples.clj
@@ -455,7 +456,13 @@ input
 
 
 
+;;get-implementation-key
 
+(let [imp :vectorz
+      mtrx (m/matrix imp [[1 2 3] [4 5 6]])]
+ (m/matrix imp
+   (map (fn [row] (m/div row (m/length row))) (m/slices mtrx)))
+  )
 
 
 
