@@ -172,7 +172,7 @@
                    (let [pp (:pp (test-trainging (make-resonable-pp 2 0.12 false 42 2)   ;;use boost to get more correct results if the input has more features
                                                    some-analytical-fn-data 200))]
                                (map  (fn [[x y]] (read-out pp  [x y]))   (range-2d -1 1 0.5)))
-                    (map second some-analytical-fn-data)))
+                    (map second some-analytical-fn-data)))  ;1.375
 
 
 

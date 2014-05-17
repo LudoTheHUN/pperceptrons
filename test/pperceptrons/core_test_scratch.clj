@@ -87,7 +87,7 @@
 m/*matrix-implementation*
 pperceptron
 input
-(pdelta-update-with-margin
+#_(pdelta-update-with-margin
     pperceptron
     :vectorz
     input
@@ -100,7 +100,7 @@ input
  )
 
 
-(def a_pp-learnt (last (take 1000
+#_(def a_pp-learnt (last (take 1000
       (iterate (fn [x]
 (pdelta-update-with-margin
     x
@@ -115,12 +115,12 @@ input
  )) pperceptron))))
 
 
-(pp-output a_pp-learnt  input 1)
+#_(pp-output a_pp-learnt  input 1)
 
 
 
 
-(pp-output
+#_(pp-output
 (last (take 1000
       (iterate (fn [x]
 (pdelta-update-with-margin
