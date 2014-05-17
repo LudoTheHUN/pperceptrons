@@ -70,8 +70,8 @@
 
 
 ;;TODO refactor out the perceptron_value_fn and per-perceptron-totals so that the per-perceptron-totals can be used for gamma--margin-around-zero updates
-  ;;TODO need to move 'out' also so gama can use it without recomputing it
-(defn pdelta-update-with-margin [pperceptron matrix-implementation input target-output epsilon rho--squashing-parameter eta--learning-rate mu-zeromargin-importance gamma--margin-around-zero]
+  ;;TODO need to move 'out' also so gamma can use it without recomputing it
+#_(defn pdelta-update-with-margin [pperceptron matrix-implementation input target-output epsilon rho--squashing-parameter eta--learning-rate mu-zeromargin-importance gamma--margin-around-zero]
   (let [z--input-vector       (input->z--input-array input)
        perceptron_value_fn    (fn [perceptron] (m/scalar (m/mmul perceptron z--input-vector)))   ;;had to add m/scalar here to allow other matrix implementations
        per-perceptron-totals  (doall (map perceptron_value_fn  (m/slices pperceptron)))
@@ -96,7 +96,7 @@
 
 
 (defn pdelta-update-with-margin--refact [pperceptron matrix-implementation z--input-vector
-                                         per-perceptron-totals output               ;;added for refactor
+                                         per-perceptron-totals output               ;;added for gamma refactor
                                          target-output epsilon rho--squashing-parameter eta--learning-rate mu-zeromargin-importance gamma--margin-around-zero]
   (let [;;REMOVE z--input-vector       (input->z--input-array input)
        ;;perceptron_value_fn    (fn [perceptron] (m/scalar (m/mmul perceptron z--input-vector)))   ;;had to add m/scalar here to allow other matrix implementations
@@ -122,11 +122,29 @@
 
 ;;TODO game-tuning as stand alone protocol call
 
-(defn auto-tune---gamma--margin-around-zero [pp per-perceptron-totals output]
-  :WIP
-  )
+(defn auto-tune---gamma--margin-around-zero [pp per-perceptron-totals output target-output]
+   (let [gamma--margin-around-zero (:gamma--margin-around-zero pp)
+         epsilon                  (:epsilon pp)
+         Mlsit      (doall (map (fn [perceptron_value]
+                             (cond (and (<= 0 perceptron_value) (< perceptron_value gamma--margin-around-zero)        (<= output (+ target-output epsilon)))
+                                     :M+
+                                   (and (< (* -1 gamma--margin-around-zero) perceptron_value) (< perceptron_value 0 ) (>= output (- target-output epsilon)))
+                                     :M-
+                                   :else :ignore))
+                                per-perceptron-totals))
 
-  (let [] 2)
+         M+count   (count (filter #{:M+} Mlsit))
+         M-count   (count (filter #{:M-} Mlsit))
+         Mmin       (* epsilon (:rho--squashing-parameter pp))
+         Mmax       (* 4 Mmin)  ]
+  ;;(do (println (:gamma--margin-around-zero pp ) )
+   (assoc pp :gamma--margin-around-zero
+     (+ (:gamma--margin-around-zero pp)
+        (* 0.1 (:eta--learning-rate pp)  (- Mmin (min Mmax (+ M+count M-count)))) ))
+  ;;  )
+  ))
+
+
 
 
 (defprotocol PPperceptron
@@ -162,22 +180,26 @@
             per-perceptron-totals  (doall (map perceptron_value_fn  (m/slices (:pperceptron pp))))
             output                 (sp--squashing-function (reduce + (doall (map #(if (pos? (m/scalar %)) 1.0 -1.0) per-perceptron-totals))) (:rho--squashing-parameter pp))
             ]
-          (assoc pp :pperceptron
-            (pdelta-update-with-margin--refact
-               (:pperceptron pp)
-               (:matrix-implementation pp)
-               z--input-vector
+       (-> pp
+        (auto-tune---gamma--margin-around-zero per-perceptron-totals output target-output)
+        (assoc  :pperceptron
+                (pdelta-update-with-margin--refact
+                   (:pperceptron pp)
+                   (:matrix-implementation pp)
+                   z--input-vector
 
-               per-perceptron-totals
-               output
+                   per-perceptron-totals
+                   output
 
-               target-output ;; target-output
-               (:epsilon pp)
-               (:rho--squashing-parameter pp)
-               (:eta--learning-rate pp)
-               (:mu-zeromargin-importance pp)
-               (:gamma--margin-around-zero pp)
-              ))))
+                   target-output ;; target-output
+                   (:epsilon pp)
+                   (:rho--squashing-parameter pp)
+                   (:eta--learning-rate pp)
+                   (:mu-zeromargin-importance pp)
+                   (:gamma--margin-around-zero pp)
+                  ))
+        ; anneal-eta
+         )))
   (train-seq [pp input-output-seq]
         (reduce (fn [xs [in out]] (train xs in out)) pp input-output-seq))
   (train-seq-epochs [pp input-output-seq n-epochs]
