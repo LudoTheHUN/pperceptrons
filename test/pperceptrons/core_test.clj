@@ -6,9 +6,14 @@
             [clojure.core.matrix.implementations :as imp]))
 
 
+(defn range-2d [from to increment]
+  (apply concat (map (fn [x] (map (fn [y] [x y]) (range from to increment)) ) (range from to increment))))
+
+#_(range-2d -1 1 0.1)
+
+
 (defn cover-2d-range [pp]
-   (map  (fn [[x y]] (read-out pp [x y]))
-         (apply concat (map (fn [x] (map (fn [y] [x y]) (range -1 1 0.1)) ) (range -1 1 0.1)))))
+   (map  (fn [[x y]] (read-out pp [x y]))  (range-2d -1 1 0.1)))
 
 
 (defn frequencies-of-resonable-pp-2d [epsilon zerod?]
@@ -64,17 +69,34 @@
     [[ 0.8 -0.8]  0.0] [[ 0.9  0.7] -1.0] [[ 1.0 -0.7 ] -1.0]
    ])
 
+(def data-3d-3way-fn-data [
+    [[-1.0 -1.0  1.0] -1.0] [[-0.9  0.5 -1.0]  1.0] [[-0.8  0.2  0.4]  0.0]
+    [[-0.5 -0.4  0.2]  1.0] [[ 0.0  1.0  0.4]  0.0] [[ 0.5 -0.1 -0.8]  1.0]
+    [[ 0.8 -0.8 -0.1]  0.0] [[ 0.9  0.7 -0.3] -1.0] [[ 1.0 -0.7 -0.9] -1.0]
+   ])
 
 
 (defn multi-read-out [pp input-output-seq]
   (map (fn [test-data] (read-out pp (first test-data))) input-output-seq))
 
-(defn number-of-correct-answers [pp input-output-seq]
+#_(defn number-of-correct-answers [pp input-output-seq]
    (map (fn [test-data] (= (read-out pp (first test-data)) (second test-data))) input-output-seq))
+
+(defn number-of-correct-answers [pp input-output-seq]
+  (let [epsilon (:epsilon pp)]
+   (map (fn [test-data] (if (and
+                          (>  (+ (read-out pp (first test-data)) epsilon)  (second test-data))
+                          (<  (- (read-out pp (first test-data)) epsilon)  (second test-data))
+                          ) true)) input-output-seq)))
+
+
+
+;;TODO this needs to take epsilon into consideration
 
 (defn true-fraction [true-false-seq]
   (/  (count (filter true? true-false-seq))
       (count true-false-seq)))
+
 
 (defn test-trainging [pp input-output-seq n-epochs]
   ;trains and assesses a pp
@@ -106,16 +128,61 @@
                                                           data-2d-3way-fn-data  300)           ;;epochs
                                                          )) (range 4)  )))   ;;how many seeds to try
           '([1 4])))
+    (is (=
+         (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 3 0.5 true x 1)   ;;use boost to get more correct results if the input has more features
+                                                          data-3d-3way-fn-data  300)           ;;epochs
+                                                         )) (range 4)  )))   ;;how many seeds to try
+          '([1 4])))
  )
+;;Note that as the dimention of the input, the pp naturally got larger and did not need boosting at 3d, given 9 inputs
 
 
 ;;This almost needs a sub project for parameter optimisation
 
 
+;;(analytics function )
+    [[-1.0 -1.0] -1.0] [[-0.9  0.5]  1.0] [[-0.8  0.2 ]  0.0]
+    [[-0.5 -0.4]  1.0] [[ 0.0  1.0]  0.0] [[ 0.5 -0.1 ]  1.0]
+    [[ 0.8 -0.8]  0.0] [[ 0.9  0.7] -1.0] [[ 1.0 -0.7 ] -1.0]
 
 
 (defn make-test-data [])
 
+(def some-analytical-fn-data
+  (map (fn [[x y]]
+          (let [a (- (* (- x 1)(+ x 1)(- y 2)) 1)
+                a_bounded (cond (> a 1.0)   1.0
+                             (< a -1.0) -1.0
+                             :else       a )]
+            [[x y] a_bounded]))
+            (range-2d -1 1 0.5)))
+
+(map second some-analytical-fn-data)
+
+(count some-analytical-fn-data)
+
+             #_(sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 2 0.126 false x 2)   ;;use boost to get more correct results if the input has more features
+                                                               some-analytical-fn-data 200)           ;;epochs
+                                                         )) (range 42 43)  )))
+
+
+            ;;assessing total error
+            #_(reduce +
+                 (map (fn [x y] (m/abs (- x y)))
+                   (let [pp (:pp (test-trainging (make-resonable-pp 2 0.12 false 42 2)   ;;use boost to get more correct results if the input has more features
+                                                   some-analytical-fn-data 200))]
+                               (map  (fn [[x y]] (read-out pp  [x y]))   (range-2d -1 1 0.5)))
+                    (map second some-analytical-fn-data)))
+
+
+
+
+
+
+
+
+
+(make-resonable-pp 2 0.126 true 42 6)
 
 (apply concat (repeat 3 data-1d-binary-fn-data))
 
