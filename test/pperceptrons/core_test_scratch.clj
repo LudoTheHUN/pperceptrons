@@ -87,7 +87,7 @@
 m/*matrix-implementation*
 pperceptron
 input
-(pdelta-update-with-margin
+#_(pdelta-update-with-margin
     pperceptron
     :vectorz
     input
@@ -100,7 +100,7 @@ input
  )
 
 
-(def a_pp-learnt (last (take 1000
+#_(def a_pp-learnt (last (take 1000
       (iterate (fn [x]
 (pdelta-update-with-margin
     x
@@ -115,12 +115,12 @@ input
  )) pperceptron))))
 
 
-(pp-output a_pp-learnt  input 1)
+#_(pp-output a_pp-learnt  input 1)
 
 
 
 
-(pp-output
+#_(pp-output
 (last (take 1000
       (iterate (fn [x]
 (pdelta-update-with-margin
@@ -173,27 +173,27 @@ input
 
 
 (def pp-a
-  (make-resonable-pp 1 0.5 false 42)
+  (make-resonable-pp 1 0.5 false)
   )
 
-(anneal-eta (make-resonable-pp 1 1.0 true 42))
+(anneal-eta (make-resonable-pp 1 1.0 true ))
 
 (/ 2 50.0)
-(read-out (make-resonable-pp 1 0.1 false 42 10) [1.1549])
+(read-out (make-resonable-pp 1 0.1 false ) [1.1549])
 
-(let [pp (make-resonable-pp 1 0.01 false 41 10)]
+(let [pp (make-resonable-pp 1 0.01 false )]
   (map  (fn [x] (read-out pp [x])) (range -2 2 0.1)))
 
 
 (frequencies
-(let [pp (make-resonable-pp 2 0.25 true 42 1)]
+(let [pp (make-resonable-pp 2 0.25 true )]
   (map  (fn [x] (read-out pp [x x])) (range -3 3 0.01))))
 
 
 
 
 (frequencies
-(let [pp (make-resonable-pp 2 0.25 true 42 1)]
+(let [pp (make-resonable-pp 2 0.25 true )]
   (map  (fn [x] (read-out pp [x x])) (range -3 3 0.1))))
 
 
@@ -207,17 +207,17 @@ input
          (apply concat (map (fn [x] (map (fn [y] [x y]) (range -2 2 0.1)) ) (range -2 2 0.1)))))
 
 (defn frequencies-of-resonable-pp-2d [epsilon zerod? seed]
-    (sort (frequencies (apply concat (map (fn [seed] (cover-2d-range (make-resonable-pp 2 epsilon zerod? seed))) (range 10))))))
+    (sort (frequencies (apply concat (map (fn [seed] (cover-2d-range (make-resonable-pp 2 epsilon zerod? :seed  seed))) (range 10))))))
 
 (frequencies-of-resonable-pp-2d 0.1 true 42)
 
 
-(read-out (make-resonable-pp 2 0.27 true 42) [2 1])
-(train (make-resonable-pp 2 0.27 true 42) [2 1] 1)
+(read-out (make-resonable-pp 2 0.27 true ) [2 1])
+(train (make-resonable-pp 2 0.27 true ) [2 1] 1)
 
 
 (read-out
-(reduce (fn [xs [in out]] (train xs in out)) (make-resonable-pp 2 0.27 true 42) (repeat 100 [[2 1] 1])  )
+(reduce (fn [xs [in out]] (train xs in out)) (make-resonable-pp 2 0.27 true ) (repeat 100 [[2 1] 1])  )
 [2 1])
 
 
@@ -235,18 +235,18 @@ input
 
 ;(m/set-current-implementation :persistent-vector)
 ;(m/set-current-implementation :vectorz)
-(class (:pperceptron (make-resonable-pp 10 0.01 true 42)))
+(class (:pperceptron (make-resonable-pp 10 0.01 true )))
 
-(:pperceptron (make-resonable-pp 10 0.01 true 42))
+(:pperceptron (make-resonable-pp 10 0.01 true ))
 
-(pp-output (:pperceptron (make-resonable-pp 2 0.001 true 42)) [-0.21 0.1] 1000)
+(pp-output (:pperceptron (make-resonable-pp 2 0.001 true )) [-0.21 0.1] 1000)
 
-(m/shape (:pperceptron (make-resonable-pp 2 0.00001 true 42)))
+(m/shape (:pperceptron (make-resonable-pp 2 0.00001 true)))
 
-(:n (make-resonable-pp 10 0.1 true 42))
-(:pwidth (make-resonable-pp 10 0.1 true 42))
-(:rho--squashing-parameter (make-resonable-pp 10 0.1 true 42))
-(pp-output (:pperceptron (make-resonable-pp 10 0.1 true 42)) [0 0 5.337  0 0 -10 10 0 0  0]     (:rho--squashing-parameter (make-resonable-pp 10 0.1 true 42)))
+(:n (make-resonable-pp 10 0.1 true ))
+(:pwidth (make-resonable-pp 10 0.1 true ))
+(:rho--squashing-parameter (make-resonable-pp 10 0.1 true ))
+(pp-output (:pperceptron (make-resonable-pp 10 0.1 true )) [0 0 5.337  0 0 -10 10 0 0  0]     (:rho--squashing-parameter (make-resonable-pp 10 0.1 true )))
 
 
 ;;record and protocol 101
