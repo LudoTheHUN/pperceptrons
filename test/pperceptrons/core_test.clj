@@ -17,7 +17,7 @@
 
 
 (defn frequencies-of-resonable-pp-2d [epsilon zerod?]
-    (sort (frequencies (apply concat (map (fn [seed] (cover-2d-range (make-resonable-pp 2 epsilon zerod? seed))) (range 20))))))
+    (sort (frequencies (apply concat (map (fn [seed] (cover-2d-range (make-resonable-pp 2 epsilon zerod? :seed seed))) (range 20))))))
 
 
 (defn test-resonable-pp-responses [epsilon]
@@ -105,31 +105,31 @@
  :correctness (true-fraction (number-of-correct-answers pp-nepochs input-output-seq))
  :epochs n-epochs}))
 
-#_(test-trainging (make-resonable-pp 1 0.501 false 2 7) data-1d-binary-fn-data  100)
-#_(test-trainging (make-resonable-pp 1 0.501 false 11 5) data-1d-binary-fn-data  100)
+#_(test-trainging (make-resonable-pp 1 0.501 false :seed 2 :size-boost 7) data-1d-binary-fn-data  100)
+#_(test-trainging (make-resonable-pp 1 0.501 false :seed 11 :size-boost 5) data-1d-binary-fn-data  100)
 
 ;;Testing over many seeds
 (deftest good-epsilon-values "testing training over many seeds"
   ;;Note that the size-boost is used
     (is (=
-         (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 1 0.501 false x 5)   ;;use boost to get more correct results if the input has more features
+         (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 1 0.501 false :seed x :size-boost 5)   ;;use boost to get more correct results if the input has more features
                                                           data-1d-binary-fn-data  300)           ;;epochs
                                                          )) (range 4)  )))   ;;how many seeds to try
           '([1 4])))
 
     (is (=
-         (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 2 0.501 false x 2)   ;;use boost to get more correct results if the input has more features
+         (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 2 0.501 false :seed x :size-boost 2)   ;;use boost to get more correct results if the input has more features
                                                           data-2d-binary-fn-data  300)           ;;epochs
                                                          )) (range 4)  )))   ;;how many seeds to try
           '([1 4])))
 
     (is (=
-         (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 2 0.5 true x 4)   ;;use boost to get more correct results if the input has more features
+         (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 2 0.5 true :seed x :size-boost 4)   ;;use boost to get more correct results if the input has more features
                                                           data-2d-3way-fn-data  300)           ;;epochs
                                                          )) (range 4)  )))   ;;how many seeds to try
           '([1 4])))
     (is (=
-         (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 3 0.5 true x 2)   ;;use boost to get more correct results if the input has more features
+         (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 3 0.5 true :seed x :size-boost 2)   ;;use boost to get more correct results if the input has more features
                                                           data-3d-3way-fn-data  300)           ;;epochs
                                                          )) (range 4)  )))   ;;how many seeds to try
           '([1 4])))
@@ -137,26 +137,26 @@
 ;;Note that as the dimention of the input, the pp naturally got larger and did not need boosting at 3d, given 9 inputs
 
 (quote   "gama evolution over the synthetic problems"
-(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 1 0.501 false 42 5)   data-1d-binary-fn-data  3000)))
-(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 2 0.501 false 42 2)   data-2d-binary-fn-data  3000)))
-(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 2 0.5 true 42 4)      data-2d-3way-fn-data  3000)))
-(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 3 0.5 true 42 2)      data-3d-3way-fn-data  3000)))
+(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 1 0.501 false :seed 42 :size-boost 5)   data-1d-binary-fn-data  3000)))
+(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 2 0.501 false :seed 42 :size-boost 2)   data-2d-binary-fn-data  3000)))
+(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 2 0.5 true :seed 42 :size-boost 4)      data-2d-3way-fn-data  3000)))
+(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 3 0.5 true :seed 42 :size-boost 2)      data-3d-3way-fn-data  3000)))
 
-(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 1 0.501 false 42 5)   data-1d-binary-fn-data  300)))
-(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 2 0.501 false 42 2)   data-2d-binary-fn-data  300)))
-(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 2 0.5 true 42 4)      data-2d-3way-fn-data  300)))
-(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 3 0.5 true 42 2)      data-3d-3way-fn-data  300)))
+(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 1 0.501 false :seed 42 :size-boost 5)   data-1d-binary-fn-data  300)))
+(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 2 0.501 false :seed 42 :size-boost 2)   data-2d-binary-fn-data  300)))
+(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 2 0.5 true :seed 42 :size-boost 4)      data-2d-3way-fn-data  300)))
+(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 3 0.5 true :seed 42 :size-boost 2)      data-3d-3way-fn-data  300)))
 
-(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 1 0.501 false 42 5)   data-1d-binary-fn-data  100)))
-(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 2 0.501 false 42 2)   data-2d-binary-fn-data  100)))
-(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 2 0.5 true 42 4)      data-2d-3way-fn-data  100)))
-(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 3 0.5 true 42 2)      data-3d-3way-fn-data  100)))
+(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 1 0.501 false :seed 42 :size-boost 5)   data-1d-binary-fn-data  100)))
+(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 2 0.501 false :seed 42 :size-boost 2)   data-2d-binary-fn-data  100)))
+(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 2 0.5 true :seed 42 :size-boost 4)      data-2d-3way-fn-data  100)))
+(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 3 0.5 true:seed 42 :size-boost 2)      data-3d-3way-fn-data  100)))
 
 
-(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 1 0.501 false 42 5)   data-1d-binary-fn-data  1)))
-(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 2 0.501 false 42 2)   data-2d-binary-fn-data  1)))
-(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 2 0.5 true 42 4)      data-2d-3way-fn-data  1)))
-(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 3 0.5 true 42 2)      data-3d-3way-fn-data  1)))
+(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 1 0.501 false :seed 42 :size-boost 5)   data-1d-binary-fn-data  1)))
+(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 2 0.501 false :seed 42 :size-boost 2)   data-2d-binary-fn-data  1)))
+(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 2 0.5 true :seed 42 :size-boost 4)      data-2d-3way-fn-data  1)))
+(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 3 0.5 true :seed 42 :size-boost 2)      data-3d-3way-fn-data  1)))
 )
 
 ;;This almost needs a sub project for parameter optimisation
@@ -183,7 +183,7 @@
 
 (count some-analytical-fn-data)
 ;;TODO make this another of the tests
-             #_(sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 2 0.126 false x 2)   ;;use boost to get more correct results if the input has more features
+             #_(sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 2 0.126 false :seed x :size-boost 2)   ;;use boost to get more correct results if the input has more features
                                                                some-analytical-fn-data 200)           ;;epochs
                                                          )) (range 42 53)  )))
 
@@ -191,7 +191,7 @@
             ;;assessing total error
             #_(reduce +
                  (map (fn [x y] (m/abs (- x y)))
-                   (let [pp (:pp (test-trainging (make-resonable-pp 2 0.12 false 42 2)   ;;use boost to get more correct results if the input has more features
+                   (let [pp (:pp (test-trainging (make-resonable-pp 2 0.12 false :seed 42 :size-boost 2)   ;;use boost to get more correct results if the input has more features
                                                    some-analytical-fn-data 200))]
                                (map  (fn [[x y]] (read-out pp  [x y]))   (range-2d -1 1 0.5)))
                     (map second some-analytical-fn-data)))  ;1.375
@@ -204,7 +204,7 @@
 
 
 
-(make-resonable-pp 2 0.126 true 42 6)
+(make-resonable-pp 2 0.126 true  :seed 42 :size-boost 6)
 
 (apply concat (repeat 3 data-1d-binary-fn-data))
 

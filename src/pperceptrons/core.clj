@@ -232,7 +232,7 @@
    (m/matrix matrix-implementation (map m/normalise (m/slices pperceptron)))))
 
 
-(defn make-resonable-pp
+#_(defn make-resonable-pp---deprecated
  ([inputsize epsilon zerod? seed] (make-resonable-pp inputsize epsilon zerod? seed 1 :vectorz))
  ([inputsize epsilon zerod? seed size-boost] (make-resonable-pp inputsize epsilon zerod? seed size-boost :vectorz))
  (                    [inputsize  ;;do a (count input)
@@ -268,17 +268,41 @@
   ))))
 
 
+;;TODO refactor make-resonable-pp to use map like options
+
+(defn make-resonable-pp
+ ([inputsize epsilon zerod? & ops]
+ (let [ {:keys [seed size-boost matrix-implementation]
+         :or  {seed 0
+               size-boost 1
+               matrix-implementation :vectorz}}  ops
+       pwidth      (+ inputsize 1)
+       n-prez (int (* (/ 2 epsilon) size-boost))
+       n     (cond (and zerod? (even? n-prez))
+                     n-prez
+                   (and zerod? (odd? n-prez))
+                     (+ 1 n-prez)  ;to make it even
+                   (and (not zerod?) (odd? n-prez))
+                     n-prez
+                   (and (not zerod?) (even? n-prez))
+                     (+ 1 n-prez)
+                   :else :this_should_never_happen!)
+       rho-wip  (int (/ 1 (* 1 epsilon)))  ;;paper says 2, but this does not reconcile with example on page 6.
+       rho      (if (= rho-wip 0) 1 rho-wip)]
+  (new pperceptron-record
+  ; (scale-to-size-one (uniform-dist-matrix-center-0 matrix-implementation [n pwidth] seed))   ;; pperceptron ; the matrix holding the paralel perceptron weights which is as wide as the input +1 and as high as the number of perceptrons, n.
+   (uniform-dist-matrix-center-0 matrix-implementation [n pwidth] seed)
+   matrix-implementation     ;; As supported by core.matrix, tested against  :persistent-vector and :vectorz
+   n                         ;; n ; the total number of perceptrons in the pperceptron
+   pwidth                    ;; size of each perceptron , width of pperceptron, +1 to size of input
+   0.01                      ;; eta--learning-rate ; The learing rate. Typically 0.01 or less. Should be annealed or be dynamicall updated based on error function
+   epsilon                   ;; epsilon ; how accureate we want to be, must be > 0
+   rho                       ;; rho--squashing-parameter ; An int. If set to 1, will force the pp to have binary output (-1,+1) in n is odd. Can be at most n. Typically set to  (/ 1 (* 2 epsilon))
+   1.0                       ;; mu-zeromargin-importance ; The zero margin parameter. Typically 1.
+   0.01   ;was 0.5            ;; gamma--margin-around-zero ; Margin around zero of the perceptron. Needs to be controlled for best performance, else set between 0.1 to 0.5
+  ))))
 
 
 
-
-
-
-
-
-
-
-
-
-
-
+#_(make-resonable-pp 3 0.5 true :seed 43 :size-boost 3)
+(make-resonable-pp 3 0.5 true)
