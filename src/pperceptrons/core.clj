@@ -69,30 +69,8 @@
 
 
 
-;;TODO refactor out the perceptron_value_fn and per-perceptron-totals so that the per-perceptron-totals can be used for gamma--margin-around-zero updates
-  ;;TODO need to move 'out' also so gamma can use it without recomputing it
-                #_(defn pdelta-update-with-margin [pperceptron matrix-implementation input target-output epsilon rho--squashing-parameter eta--learning-rate mu-zeromargin-importance gamma--margin-around-zero]
-                  (let [z--input-vector       (input->z--input-array input)
-                       perceptron_value_fn    (fn [perceptron] (m/scalar (m/mmul perceptron z--input-vector)))   ;;had to add m/scalar here to allow other matrix implementations
-                       per-perceptron-totals  (doall (map perceptron_value_fn  (m/slices pperceptron)))
-                       out                    (sp--squashing-function (reduce + (doall (map #(if (pos? (m/scalar %)) 1.0 -1.0) per-perceptron-totals))) rho--squashing-parameter)
-                       ]
-                    (m/matrix matrix-implementation
-                              (doall (map  (fn [perceptron perceptron_value]
-                                       (cond
-                                         (and (> out (+ target-output epsilon)) (pos? perceptron_value))
-                                           (m-ops/+ perceptron (scaling-to-one-fn perceptron eta--learning-rate) (m-ops/* z--input-vector -1.0 eta--learning-rate))
-                                         (and (< out (- target-output epsilon)) (neg? perceptron_value))
-                                           (m-ops/+ perceptron (scaling-to-one-fn perceptron eta--learning-rate) (m-ops/* z--input-vector       eta--learning-rate))
-                                         (and (<= out (+ target-output epsilon)) (pos? perceptron_value) (< perceptron_value gamma--margin-around-zero))
-                                           (m-ops/+ perceptron (scaling-to-one-fn perceptron eta--learning-rate) (m-ops/* z--input-vector  mu-zeromargin-importance  eta--learning-rate))
-                                         (and (>= out (- target-output epsilon))  (neg? perceptron_value) (< (* -1.0 gamma--margin-around-zero) perceptron_value ))
-                                           (m-ops/+ perceptron (scaling-to-one-fn perceptron eta--learning-rate) (m-ops/* z--input-vector -1.0  mu-zeromargin-importance  eta--learning-rate))
-                                         :else
-                                           (m-ops/+ perceptron (scaling-to-one-fn perceptron eta--learning-rate) )))
-                                    pperceptron
-                                    per-perceptron-totals)))))
-
+;;TODO DONE refactor out the perceptron_value_fn and per-perceptron-totals so that the per-perceptron-totals can be used for gamma--margin-around-zero updates
+  ;;TODO DONE need to move 'output' also so gamma can use it without recomputing it
 
 
 (defn pdelta-update-with-margin [pperceptron matrix-implementation z--input-vector
@@ -124,7 +102,8 @@
 
 (defn auto-tune---gamma--margin-around-zero [pp per-perceptron-totals output target-output]
    (let [gamma--margin-around-zero (:gamma--margin-around-zero pp)
-         epsilon                  (:epsilon pp)
+         gamma--tunning-rate       (:gamma--tunning-rate pp)
+         epsilon                   (:epsilon pp)
          Mlsit      (doall (map (fn [perceptron_value]
                              (cond (and (<= 0 perceptron_value) (< perceptron_value gamma--margin-around-zero)        (<= output (+ target-output epsilon)))
                                      :M+
@@ -137,14 +116,65 @@
          M-count   (count (filter #{:M-} Mlsit))
          Mmin       (* epsilon (:rho--squashing-parameter pp))
          Mmax       (* 4 Mmin)  ]
-  ;;(do (println (:gamma--margin-around-zero pp ) )
    (assoc pp :gamma--margin-around-zero
      (+ (:gamma--margin-around-zero pp)
-        (* 0.1 (:eta--learning-rate pp)  (- Mmin (min Mmax (+ M+count M-count)))) ))
-  ;;  )
+        (* gamma--tunning-rate (:eta--learning-rate pp)  (- Mmin (min Mmax (+ M+count M-count)))) ))
   ))
 
 
+
+;;TODO epsilon learnig rate auto tunning via error function
+(defn pp-error-function "compute the pp error function."
+  [pp per-perceptron-totals output target-output]
+   (let [epsilon (:epsilon pp)
+         gamma--margin-around-zero (:gamma--margin-around-zero pp)
+         mu-zeromargin-importance  (:mu-zeromargin-importance pp)
+         mu*gamma (* mu-zeromargin-importance gamma--margin-around-zero)
+         term1 (* 0.5 (reduce + (map (fn [perceptron] (let [sq-me (- (m/length-squared perceptron) 1.0)] (* sq-me sq-me) )) (m/slices(:pperceptron pp)))))
+         ]
+  (+ term1
+    (cond (> output (+ target-output epsilon))
+             (reduce +
+              (map (fn [perceptron_value] (+ (if (>= perceptron_value 0.0)
+                                                 (+ mu*gamma perceptron_value) 0.0)
+                                             (if (and (< (* -1.0 gamma--margin-around-zero) perceptron_value)
+                                                      (< perceptron_value 0.0))
+                                                 (+ mu*gamma (* mu-zeromargin-importance perceptron_value)) 0.0)))
+                   per-perceptron-totals))
+          (< output (- target-output epsilon))
+             (reduce +
+              (map (fn [perceptron_value] (+ (if (< perceptron_value 0.0)
+                                                 (- mu*gamma perceptron_value) 0.0)
+                                             (if (and (<= 0.0 perceptron_value)
+                                                      (< perceptron_value gamma--margin-around-zero))
+                                                 (- mu*gamma (* mu-zeromargin-importance perceptron_value)) 0.0)))
+                   per-perceptron-totals))
+          (<= (m/abs (- output target-output)) epsilon)
+             (reduce +
+              (map (fn [perceptron_value] (+ (if (and (< (* -1.0 gamma--margin-around-zero) perceptron_value)
+                                                      (< perceptron_value 0.0))
+                                                 (+ mu*gamma (* mu-zeromargin-importance perceptron_value)) 0.0)
+                                             (if (and (<= 0.0 perceptron_value)
+                                                      (< perceptron_value gamma--margin-around-zero))
+                                                 (- mu*gamma (* mu-zeromargin-importance perceptron_value)) 0.0)))
+                   per-perceptron-totals))
+          :else 0.0))))
+
+(defn gamma-auto-tune [pp error-before error-after]
+  (assoc pp :eta--learning-rate
+    (let [eta--learning-rate (:eta--learning-rate pp)]
+      ;;(println eta--learning-rate)
+      (cond (and (> error-before error-after) (< eta--learning-rate 0.01))
+              (* eta--learning-rate 1.1)    ;1.1  ;;Error decreased, speed up learning a bit
+            (and (< error-before error-after) (> eta--learning-rate 0.000001))
+              (* eta--learning-rate 0.5)
+            :else eta--learning-rate))))  ;0.5 ;;Error increase, slow down learning
+
+
+;;PLAN compute the error-value of orgiginal pp given inputs output, target-output
+      ;train the pp
+      ;compute the error-value of trained pp given inputs output, target-output, this means recompute the per-perceptron-totals and output of the trained pp
+      ;if error-value has decreased, * epsilon rate by 1.1, if error-value has increased , * epislon rate by 0.5
 
 
 (defprotocol PPperceptron
@@ -153,7 +183,7 @@
   (train        [pp input output] "trains the paralel perceptron on one input-output example")
   (train-seq    [pp input-output-seq] "trains the paralel perceptron on a sequence of input examples with output values, shaped as [[inputs output]...]. This is epoch based training, one epoch only")
   (train-seq-epochs    [pp input-output-seq n-epochs] "trains the paralel perceptron on a sequence of input examples with output values, shaped as [[inputs output]...]. This is epoch based training, n-epochs")
-  (anneal-eta   [pp] "anneal eta, the learning rate"))
+  (anneal-eta   [pp] "dumbly anneal eta, the learning rate, do not used, error function based integrated via :eta-tune parameter"))
 
 
 (defrecord pperceptron-record
@@ -166,10 +196,14 @@
    rho--squashing-parameter  ;; rho--squashing-parameter ; An int. If set to 1, will force the pp to have binary output (-1,+1) in n is odd. Can be at most n. Typically set to  (/ 1 (* 2 epsilon))
    mu-zeromargin-importance  ;; mu-zeromargin-importance ; The zero margin parameter. Typically 1.
    gamma--margin-around-zero ;; gamma--margin-around-zero ; Margin around zero of the perceptron. Needs to be controlled for best performance, else set between 0.1 to 0.5
+   gamma--tunning-rate       ;; how quickly should gamma be tunned , good value is 0.1
+   eta--auto-tune?           ;; true means we will auto tune eta--learning-rate based on the error function, this will make learning less performant (wall clock), but should increase learning rate in terms of epochs. Should also make training more robust
    ])
 
 
-;;TODO hookup training function
+;;TODO DONE hookup training function
+
+
 (extend-protocol PPperceptron
   pperceptron-record
   (read-out [pp input]
@@ -179,27 +213,37 @@
             perceptron_value_fn    (fn [perceptron] (m/scalar (m/mmul perceptron z--input-vector)))   ;;had to add m/scalar here to allow other matrix implementations
             per-perceptron-totals  (doall (map perceptron_value_fn  (m/slices (:pperceptron pp))))
             output                 (sp--squashing-function (reduce + (doall (map #(if (pos? (m/scalar %)) 1.0 -1.0) per-perceptron-totals))) (:rho--squashing-parameter pp))
+            pp-trained             (-> pp
+                                    (auto-tune---gamma--margin-around-zero per-perceptron-totals output target-output)
+                                    (assoc  :pperceptron
+                                            (pdelta-update-with-margin
+                                               (:pperceptron pp)
+                                               (:matrix-implementation pp)
+                                               z--input-vector
+
+                                               per-perceptron-totals
+                                               output
+
+                                               target-output ;; target-output
+                                               (:epsilon pp)
+                                               (:rho--squashing-parameter pp)
+                                               (:eta--learning-rate pp)
+                                               (:mu-zeromargin-importance pp)
+                                               (:gamma--margin-around-zero pp)
+                                              )))
+            error-before                   (pp-error-function pp per-perceptron-totals output target-output)
+            per-perceptron-totals-trained  (doall (map perceptron_value_fn  (m/slices (:pperceptron pp-trained))))
+            output-trained                 (sp--squashing-function (reduce + (doall (map #(if (pos? (m/scalar %)) 1.0 -1.0) per-perceptron-totals-trained))) (:rho--squashing-parameter pp-trained))
+            error-after                    (pp-error-function pp-trained per-perceptron-totals-trained output-trained target-output)
             ]
-       (-> pp
-        (auto-tune---gamma--margin-around-zero per-perceptron-totals output target-output)
-        (assoc  :pperceptron
-                (pdelta-update-with-margin
-                   (:pperceptron pp)
-                   (:matrix-implementation pp)
-                   z--input-vector
-
-                   per-perceptron-totals
-                   output
-
-                   target-output ;; target-output
-                   (:epsilon pp)
-                   (:rho--squashing-parameter pp)
-                   (:eta--learning-rate pp)
-                   (:mu-zeromargin-importance pp)
-                   (:gamma--margin-around-zero pp)
-                  ))
-        ; anneal-eta
-         )))
+       (if (:eta--auto-tune? pp)
+            (let  [error-before                   (pp-error-function pp per-perceptron-totals output target-output)
+                   per-perceptron-totals-trained  (doall (map perceptron_value_fn  (m/slices (:pperceptron pp-trained))))
+                   output-trained                 (sp--squashing-function (reduce + (doall (map #(if (pos? (m/scalar %)) 1.0 -1.0) per-perceptron-totals-trained))) (:rho--squashing-parameter pp-trained))
+                   error-after                    (pp-error-function pp-trained per-perceptron-totals-trained output-trained target-output)]
+               (gamma-auto-tune pp-trained error-before error-after))
+           pp-trained)
+      ))
   (train-seq [pp input-output-seq]
         (reduce (fn [xs [in out]] (train xs in out)) pp input-output-seq))
   (train-seq-epochs [pp input-output-seq n-epochs]
@@ -219,7 +263,8 @@
         (fn [& ixs]
           (- (* 2.0 (.nextDouble rnd)) 1.0))))))
 
-#_(uniform-dist-matrix-center-0 :vectorz [3 3] 42)
+
+#_(uniform-dist-matrix-center-0 :vectorz [30 30] 42)
 #_(imp/get-implementation-key (uniform-dist-matrix-center-0 :vectorz [3] 42))
 
 
@@ -232,50 +277,15 @@
    (m/matrix matrix-implementation (map m/normalise (m/slices pperceptron)))))
 
 
-#_(defn make-resonable-pp---deprecated
- ([inputsize epsilon zerod? seed] (make-resonable-pp inputsize epsilon zerod? seed 1 :vectorz))
- ([inputsize epsilon zerod? seed size-boost] (make-resonable-pp inputsize epsilon zerod? seed size-boost :vectorz))
- (                    [inputsize  ;;do a (count input)
-                       epsilon    ;;less then 0.5, nice numers here are eg: 0.25, 0.1
-                       zerod?     ;;if true, n, number of perceptrons, will be even hence zero will be a possible output.
-                       seed       ;;some int of your choosing
-                       size-boost
-                       matrix-implementation] ;;How many times should the pp be bigger then recomended
- (let [pwidth      (+ inputsize 1)
-       n-prez (int (* (/ 2 epsilon) size-boost))
-       n     (cond (and zerod? (even? n-prez))
-                     n-prez
-                   (and zerod? (odd? n-prez))
-                     (+ 1 n-prez)  ;to make it even
-                   (and (not zerod?) (odd? n-prez))
-                     n-prez
-                   (and (not zerod?) (even? n-prez))
-                     (+ 1 n-prez)
-                   :else :this_should_never_happen!)
-       rho-wip  (int (/ 1 (* 1 epsilon)))  ;;paper says 2, but this does not reconcile with example on page 6.
-       rho      (if (= rho-wip 0) 1 rho-wip)]
-  (new pperceptron-record
-  ; (scale-to-size-one (uniform-dist-matrix-center-0 matrix-implementation [n pwidth] seed))   ;; pperceptron ; the matrix holding the paralel perceptron weights which is as wide as the input +1 and as high as the number of perceptrons, n.
-   (uniform-dist-matrix-center-0 matrix-implementation [n pwidth] seed)
-   matrix-implementation     ;; As supported by core.matrix, tested against  :persistent-vector and :vectorz
-   n                         ;; n ; the total number of perceptrons in the pperceptron
-   pwidth                    ;; size of each perceptron , width of pperceptron, +1 to size of input
-   0.01                      ;; eta--learning-rate ; The learing rate. Typically 0.01 or less. Should be annealed or be dynamicall updated based on error function
-   epsilon                   ;; epsilon ; how accureate we want to be, must be > 0
-   rho                       ;; rho--squashing-parameter ; An int. If set to 1, will force the pp to have binary output (-1,+1) in n is odd. Can be at most n. Typically set to  (/ 1 (* 2 epsilon))
-   1.0                       ;; mu-zeromargin-importance ; The zero margin parameter. Typically 1.
-   0.01   ;was 0.5            ;; gamma--margin-around-zero ; Margin around zero of the perceptron. Needs to be controlled for best performance, else set between 0.1 to 0.5
-  ))))
+;;TODO DONE refactor make-resonable-pp to use map like options
 
-
-;;TODO refactor make-resonable-pp to use map like options
-
-(defn make-resonable-pp
+(defn make-resonable-pp "creates a pp with resonable defaults given user friendly parameters"
  ([inputsize epsilon zerod? & ops]
- (let [ {:keys [seed size-boost matrix-implementation]
+ (let [ {:keys [seed size-boost matrix-implementation eta--auto-tune?]
          :or  {seed 0
                size-boost 1
-               matrix-implementation :vectorz}}  ops
+               matrix-implementation :vectorz
+               eta--auto-tune? true}}  ops
        pwidth      (+ inputsize 1)
        n-prez (int (* (/ 2 epsilon) size-boost))
        n     (cond (and zerod? (even? n-prez))
@@ -299,10 +309,13 @@
    epsilon                   ;; epsilon ; how accureate we want to be, must be > 0
    rho                       ;; rho--squashing-parameter ; An int. If set to 1, will force the pp to have binary output (-1,+1) in n is odd. Can be at most n. Typically set to  (/ 1 (* 2 epsilon))
    1.0                       ;; mu-zeromargin-importance ; The zero margin parameter. Typically 1.
-   0.01   ;was 0.5            ;; gamma--margin-around-zero ; Margin around zero of the perceptron. Needs to be controlled for best performance, else set between 0.1 to 0.5
+   0.01   ;was 0.5           ;; gamma--margin-around-zero ; Margin around zero of the perceptron. Needs to be controlled for best performance, else set between 0.01 to 0.5
+   0.1                       ;; gamma--tunning-rate ; 0 means game will not be tunned
+   eta--auto-tune?           ;; eta--auto-tune? Default true, chooses if we should auto tune the learnig rate
   ))))
 
 
 
+
 #_(make-resonable-pp 3 0.5 true :seed 43 :size-boost 3)
-(make-resonable-pp 3 0.5 true)
+#_(make-resonable-pp 3 0.5 true)
