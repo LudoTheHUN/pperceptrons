@@ -286,3 +286,49 @@ input
    (map (fn [row] (m/div row (m/length row))) (m/slices mtrx)))
   )
 
+
+
+
+
+
+(let [pp (make-resonable-pp 3 0.1 true)
+      z--input-vector  [-0.7 1.4 -0.5 -1.0]
+      perceptron_value_fn    (fn [perceptron] (m/scalar (m/mmul perceptron z--input-vector)))   ;;had to add m/scalar here to allow other matrix implementations
+      per-perceptron-totals  (doall (map perceptron_value_fn  (m/slices (:pperceptron pp))))
+      output                 (sp--squashing-function (reduce + (doall (map #(if (pos? (m/scalar %)) 1.0 -1.0) per-perceptron-totals))) (:rho--squashing-parameter pp))
+      pp-t1 (train pp [-0.7 1.4 -0.5] -0.6)
+      pp-t10 (train-seq-epochs pp [[[-0.7 1.4 -0.5] -0.6]] 10)
+      pp-t100 (train-seq-epochs pp [[[-0.7 1.4 -0.5] -0.6]] 100)
+      ]
+[(pp-error-function pp per-perceptron-totals output -0.91)
+ (pp-error-function pp per-perceptron-totals output -0.90)
+ (pp-error-function pp per-perceptron-totals output -0.6)
+ (pp-error-function pp per-perceptron-totals output -0.71)
+ (pp-error-function pp per-perceptron-totals output -0.3)
+ (pp-error-function pp per-perceptron-totals output  1.3)
+ :pp-t1
+ (pp-error-function pp-t1 per-perceptron-totals output -0.91)
+ (pp-error-function pp-t1 per-perceptron-totals output -0.90)
+ (pp-error-function pp-t1 per-perceptron-totals output -0.6)
+ (pp-error-function pp-t1 per-perceptron-totals output -0.71)
+ (pp-error-function pp-t1 per-perceptron-totals output -0.3)
+ (pp-error-function pp-t1 per-perceptron-totals output  1.3)
+ :pp-t100
+ (pp-error-function pp-t10 per-perceptron-totals output -0.91)
+ (pp-error-function pp-t10 per-perceptron-totals output -0.90)
+ (pp-error-function pp-t10 per-perceptron-totals output -0.6)
+ (pp-error-function pp-t10 per-perceptron-totals output -0.71)
+ (pp-error-function pp-t10 per-perceptron-totals output -0.3)
+ (pp-error-function pp-t10 per-perceptron-totals output  1.3)
+ :pp-t100
+ (pp-error-function pp-t100 per-perceptron-totals output -0.91)
+ (pp-error-function pp-t100 per-perceptron-totals output -0.90)
+ (pp-error-function pp-t100 per-perceptron-totals output -0.6)
+ (pp-error-function pp-t100 per-perceptron-totals output -0.71)
+ (pp-error-function pp-t100 per-perceptron-totals output -0.3)
+ (pp-error-function pp-t100 per-perceptron-totals output  1.3)
+ (read-out pp-t100 [-0.7 1.4 -0.5])
+ pp
+ pp-t100
+ ]) ;-0.6 given [-0.7 1.4 -0.5 -1.0]
+

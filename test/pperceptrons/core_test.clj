@@ -214,7 +214,7 @@
   (is (<
             (reduce +
                  (map (fn [x y] (m/abs (- x y)))
-                   (let [pp (:pp (test-trainging (make-resonable-pp 2 0.12 false :seed 42 :size-boost 3)   ;;use boost to get more correct results if the input has more features
+                   (let [pp (:pp (test-trainging (make-resonable-pp 2 0.125 false :seed 42 :size-boost 2)   ;;use boost to get more correct results if the input has more features
                                                    some-analytical-fn-data 200))]
                                (map  (fn [[x y]] (read-out pp  [x y]))   (range-2d -1 1 0.5)))
                     (map second some-analytical-fn-data)))
