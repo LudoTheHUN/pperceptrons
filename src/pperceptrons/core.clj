@@ -161,10 +161,14 @@
           :else 0.0))))
 
 (defn gamma-auto-tune [pp error-before error-after]
-  (assoc pp [:eta--learning-rate]
-    (if (> error-before error-after)
-          (* (:eta--learning-rate pp) 1.1)  ;;Error decreased, speed up learning a bit
-          (* (:eta--learning-rate pp) 0.5))))  ;;Error increase, slow down learning
+  (assoc pp :eta--learning-rate
+    (let [eta--learning-rate (:eta--learning-rate pp)]
+      ;;(println eta--learning-rate)
+      (cond (and (> error-before error-after) (< eta--learning-rate 0.01))
+              (* eta--learning-rate 1.1)    ;1.1  ;;Error decreased, speed up learning a bit
+            (and (< error-before error-after) (> eta--learning-rate 0.000001))
+              (* eta--learning-rate 0.5)
+            :else eta--learning-rate))))  ;0.5 ;;Error increase, slow down learning
 
 
 ;;PLAN compute the error-value of orgiginal pp given inputs output, target-output
@@ -179,7 +183,7 @@
   (train        [pp input output] "trains the paralel perceptron on one input-output example")
   (train-seq    [pp input-output-seq] "trains the paralel perceptron on a sequence of input examples with output values, shaped as [[inputs output]...]. This is epoch based training, one epoch only")
   (train-seq-epochs    [pp input-output-seq n-epochs] "trains the paralel perceptron on a sequence of input examples with output values, shaped as [[inputs output]...]. This is epoch based training, n-epochs")
-  (anneal-eta   [pp] "anneal eta, the learning rate"))
+  (anneal-eta   [pp] "dumbly anneal eta, the learning rate, do not used, error function based integrated via :eta-tune parameter"))
 
 
 (defrecord pperceptron-record
@@ -193,6 +197,7 @@
    mu-zeromargin-importance  ;; mu-zeromargin-importance ; The zero margin parameter. Typically 1.
    gamma--margin-around-zero ;; gamma--margin-around-zero ; Margin around zero of the perceptron. Needs to be controlled for best performance, else set between 0.1 to 0.5
    gamma--tunning-rate       ;; how quickly should gamma be tunned , good value is 0.1
+   eta--auto-tune?           ;; true means we will auto tune eta--learning-rate based on the error function, this will make learning less performant (wall clock), but should increase learning rate in terms of epochs. Should also make training more robust
    ])
 
 
@@ -231,7 +236,13 @@
             output-trained                 (sp--squashing-function (reduce + (doall (map #(if (pos? (m/scalar %)) 1.0 -1.0) per-perceptron-totals-trained))) (:rho--squashing-parameter pp-trained))
             error-after                    (pp-error-function pp-trained per-perceptron-totals-trained output-trained target-output)
             ]
-        pp-trained
+       (if (:eta--auto-tune? pp)
+            (let  [error-before                   (pp-error-function pp per-perceptron-totals output target-output)
+                   per-perceptron-totals-trained  (doall (map perceptron_value_fn  (m/slices (:pperceptron pp-trained))))
+                   output-trained                 (sp--squashing-function (reduce + (doall (map #(if (pos? (m/scalar %)) 1.0 -1.0) per-perceptron-totals-trained))) (:rho--squashing-parameter pp-trained))
+                   error-after                    (pp-error-function pp-trained per-perceptron-totals-trained output-trained target-output)]
+               (gamma-auto-tune pp-trained error-before error-after))
+           pp-trained)
       ))
   (train-seq [pp input-output-seq]
         (reduce (fn [xs [in out]] (train xs in out)) pp input-output-seq))
@@ -270,10 +281,11 @@
 
 (defn make-resonable-pp "creates a pp with resonable defaults given user friendly parameters"
  ([inputsize epsilon zerod? & ops]
- (let [ {:keys [seed size-boost matrix-implementation]
+ (let [ {:keys [seed size-boost matrix-implementation eta--auto-tune?]
          :or  {seed 0
                size-boost 1
-               matrix-implementation :vectorz}}  ops
+               matrix-implementation :vectorz
+               eta--auto-tune? true}}  ops
        pwidth      (+ inputsize 1)
        n-prez (int (* (/ 2 epsilon) size-boost))
        n     (cond (and zerod? (even? n-prez))
@@ -299,6 +311,7 @@
    1.0                       ;; mu-zeromargin-importance ; The zero margin parameter. Typically 1.
    0.01   ;was 0.5           ;; gamma--margin-around-zero ; Margin around zero of the perceptron. Needs to be controlled for best performance, else set between 0.01 to 0.5
    0.1                       ;; gamma--tunning-rate ; 0 means game will not be tunned
+   eta--auto-tune?           ;; eta--auto-tune? Default true, chooses if we should auto tune the learnig rate
   ))))
 
 
