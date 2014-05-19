@@ -98,7 +98,7 @@
                     pperceptron
                     per-perceptron-totals)))))
 
-;;TODO game-tuning as stand alone protocol call
+;;TODO gamma-tuning as stand alone protocol call
 
 (defn auto-tune---gamma--margin-around-zero [pp per-perceptron-totals output target-output]
    (let [gamma--margin-around-zero (:gamma--margin-around-zero pp)
@@ -310,7 +310,7 @@
    rho                       ;; rho--squashing-parameter ; An int. If set to 1, will force the pp to have binary output (-1,+1) in n is odd. Can be at most n. Typically set to  (/ 1 (* 2 epsilon))
    1.0                       ;; mu-zeromargin-importance ; The zero margin parameter. Typically 1.
    0.01   ;was 0.5           ;; gamma--margin-around-zero ; Margin around zero of the perceptron. Needs to be controlled for best performance, else set between 0.01 to 0.5
-   0.1                       ;; gamma--tunning-rate ; 0 means game will not be tunned
+   0.1                       ;; gamma--tunning-rate ; 0 means gamma will not be tunned
    eta--auto-tune?           ;; eta--auto-tune? Default true, chooses if we should auto tune the learnig rate
   ))))
 
