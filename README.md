@@ -99,11 +99,13 @@ You can ask for any value on the input side. In this case, we see that the pp-tr
 
 Internally, for this most trivial of examples, the pp is represented by 3 by 3 matrix of Double's.
 
+WIP: a more advanced example would train on the Iris data set.
+
 Notes:
 
-- There are no guarantees of convergence or generalisation. Unless you feed a pp contradictory data, it should make progress towards a better approximation.
-- You may need to set :size-boost > 1 for complicated datasets to improve accuracy.
-- If you want to create the pp paramters manually, have a look at the `make-resonable-pp` implementation.
+- There are no guarantees of convergence or generalisation. Unless you feed a pp contradictory data, it should make progress towards a better approximation, given the epsilon of error you specified.
+- You may need to set `:size-boost` option to > 1 for complicated datasets to improve accuracy. 
+- If you want to create a pp manually, have a look at the `make-resonable-pp` implementation and the underlying record.
 
 
 ## License
