@@ -53,7 +53,7 @@ but this is only one instance of training, over just 1 of the 4 training example
 To train the pp over n-epochs of the data, use `train-seq-epochs`
 
 ```Clojure
-(dep pp-trained  (let [n-epochs 400]
+(def pp-trained  (let [n-epochs 400]
                     (train-seq-epochs pp input n-epochs)))
 ```
 
