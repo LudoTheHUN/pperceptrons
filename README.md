@@ -45,7 +45,7 @@ You can train the pp with
 ```Clojure
 (train pp
        (ffirst input) ;input
-       (second (first target-output)))  ;output
+       (second (first input)))  ;output
 ```
 
 but this is only one instance of training, over just 1 of the 4 training examples. It can takes 100's of epochs for the pperceptron to settle to the intended answer
