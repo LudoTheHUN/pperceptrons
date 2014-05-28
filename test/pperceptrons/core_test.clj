@@ -373,9 +373,9 @@ iris-data
                                                 (shuffle (map (fn [x] [(first x) (nth x 2)])  iris-data))    2000))
 
 (def pp-iris-versicolor
-  (test-trainging (make-resonable-pp 4 0.501 false :seed 42 :size-boost 1 :eta--auto-tune? true
+  (test-trainging (make-resonable-pp 4 0.501 false :seed 42 :size-boost 2 :eta--auto-tune? true
                                                 :gamma--tunning-rate 1.0)   ;;use boost to get more correct results if the input has more features
-                                                 (shuffle (map (fn [x] [(first x) (nth x 3)])  iris-data))    2000))
+                                                 (shuffle (map (fn [x] [(first x) (nth x 3)])  iris-data))    5000))
 
 
 (:correctness pp-iris-setosa)
