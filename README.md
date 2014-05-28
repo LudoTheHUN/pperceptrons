@@ -1,14 +1,16 @@
 # pperceptrons
 
-A Clojure library designed to implement [pperceptrons](http://www.igi.tugraz.at/psfiles/pdelta-journal.pdf) using core.matrix.
+A Clojure library designed to implement a [pperceptron](http://www.igi.tugraz.at/psfiles/pdelta-journal.pdf) using core.matrix.
 
-Parallel perceptrons (pperceptrons or pp's for short), via the p-delta learning rule, can approximate functions from R^n to the range [-1.0 , 1.0] to arbitrary accuracy given appropriate paramters.
+An alternative to traditional [neural networks](http://en.wikipedia.org/wiki/Artificial_neural_network) for [function approximation](http://en.wikipedia.org/wiki/Function_approximation).
+
+A parallel perceptron (pperceptron or pp's for short), trained via the p-delta learning rule, can approximate a function from ℝⁿ to the range [-1.0 , 1.0]. It can do this to arbitrary accuracy given appropriate parameters.
 
 Read the paper to learn more.
 
 While epoch based utility functions are available, they all fall back to iterative on-line learning implemented in `train`.
 
-WIP: Key meta parameters (like learning rate) are auto tuned, no paramter tuning is required.
+All meta parameters (like learning rate) are auto tuned, no parameter tuning is required.
 
 ## Usage
 
@@ -27,7 +29,7 @@ Create a pperceptron
 ```Clojure
 (def pp
  (make-resonable-pp
-   2       ;inputsize    ;;how wide is the input, for this examples, we have an input of size 2
+   2       ;inputsize    ;how wide is the input, for this example, we have an input of size 2
    0.501   ;epsilon      ;How accurate do you need to be. Use 0.501 for a binary pperceptron (which will return -1.0 or 1.0, when zerod? = false). Smaller epsilon will make the pp bigger internally.
    false   ;zerod?       ;true makes the number of intrnal perceptrons even, so it will be possible to respond with 0.0 as the output.
       ; & ops
@@ -48,7 +50,7 @@ You can train the pp with
        (second (first input)))  ;output
 ```
 
-but this is only one instance of training, over just 1 of the 4 training examples. It can takes 100's of epochs for the pperceptron to settle to the intended answer
+but this is only one instance of training, over just 1 of the 4 training examples. It can takes 100's of epochs for the pp to settle to the intended answer
 
 To train the pp over n-epochs of the data, use `train-seq-epochs`
 
