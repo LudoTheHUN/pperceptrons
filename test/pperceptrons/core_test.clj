@@ -213,7 +213,7 @@
 
 ;;This almost needs a sub project for parameter optimisation
 
-(gamma-auto-tune (make-resonable-pp 3 0.5 true :seed 42 :size-boost 2) 0.5 0.4)
+(eta-auto-tune (make-resonable-pp 3 0.5 true :seed 42 :size-boost 2) 0.5 0.4)
 
 ;;(analytics function )
     [[-1.0 -1.0] -1.0] [[-0.9  0.5]  1.0] [[-0.8  0.2 ]  0.0]
@@ -276,6 +276,7 @@
 (def pp (test-trainging (make-resonable-pp 2  0.0624 true :seed 42 :size-boost 3 :eta--auto-tune? true)   ;;use boost to get more correct results if the input has more features
                                                    some-analytical-fn-data 400))
 
+pp
 
 (read-out (:pp pp) [-0.5 0.5])  ;0.125
 (read-out (:pp pp) [-1.0 0.5])  ;-1.0
@@ -331,7 +332,68 @@
 
 
 
+(def iris-data
+  (let [iris-rawdata  (slurp "./test/resources/iris.data")
+        iris-lsplit   (clojure.string/split-lines iris-rawdata)
+        iris-rsplit   (map (fn [x] (clojure.string/split x #",")) iris-lsplit)
+        iris-in-out-form (map (fn [x]  [[(. Double parseDouble (nth x 0 ))
+                                         (. Double parseDouble (nth x 1 ))
+                                         (. Double parseDouble (nth x 2 ))
+                                         (. Double parseDouble (nth x 3 ))]
+                                        (if (= (nth x 4) "Iris-setosa")
+                                               1.0 -1.0)
+                                        (if (= (nth x 4) "Iris-virginica")
+                                               1.0 -0.1)
+                                        (if (= (nth x 4) "Iris-versicolor")
+                                               1.0 -0.1)
+                                        ])    iris-rsplit)
+        ]
+
+   ; iris-in-out-form
+
+    (shuffle iris-in-out-form)
+    )
+  )
+
+
+iris-data
+
+(quote
+
+
+ ;;;WHY IS THE NOT PERFORMING!?!?!?!
+(def pp-iris-setosa
+  (test-trainging (make-resonable-pp 4 0.501 true :seed 42 :size-boost 1 :eta--auto-tune? true
+                                                :gamma--tunning-rate 1.0)   ;;use boost to get more correct results if the input has more features
+                                                 iris-data 800))
+
+(def pp-iris-virginica
+  (test-trainging (make-resonable-pp 4 0.501 true :seed 42 :size-boost 2 :eta--auto-tune? true
+                                                :gamma--tunning-rate 0.1)   ;;use boost to get more correct results if the input has more features
+                                                (shuffle (map (fn [x] [(first x) (nth x 2)])  iris-data))    6000))
+
+(def pp-iris-versicolor
+  (test-trainging (make-resonable-pp 4 0.501 true :seed 42 :size-boost 1 :eta--auto-tune? false
+                                                :gamma--tunning-rate 0.0)   ;;use boost to get more correct results if the input has more features
+                                                 (map (fn [x] [(first x) (nth x 3)])  iris-data)    1000))
+
+
+(:correctness pp-iris-setosa)
+(:correctness pp-iris-virginica)   ;43/75  ;why are we not getting this right??
+(:correctness pp-iris-versicolor)   ; 67/150 ;why are we not getting this right??
+
+
+(:pp pp-iris-setosa)
+(:pp pp-iris-virginica)
+(:pp pp-iris-versicolor)
 
 
 
+(map (fn [x] [(second x) (read-out (:pp pp-iris) (first x))]  )  iris-data  )
+(frequencies (map (fn [x] [(second x) (read-out (:pp pp-iris) (first x))]  )  iris-data  ))
 
+
+
+(read-out (:pp pp-iris) [5.1 3.5 1.4 0.2] )
+
+ )

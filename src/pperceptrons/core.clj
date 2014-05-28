@@ -115,11 +115,14 @@
          M+count   (count (filter #{:M+} Mlsit))
          M-count   (count (filter #{:M-} Mlsit))
          Mmin       (* epsilon (:rho--squashing-parameter pp))
-         Mmax       (* 4 Mmin)  ]
-   (assoc pp :gamma--margin-around-zero
-     (+ (:gamma--margin-around-zero pp)
-        (* gamma--tunning-rate (:eta--learning-rate pp)  (- Mmin (min Mmax (+ M+count M-count)))) ))
-  ))
+         Mmax       (* 4 Mmin)
+         new-gamma--margin-around-zero  (+ gamma--margin-around-zero
+                                            (* gamma--tunning-rate
+                                               (:eta--learning-rate pp)
+                                               (- Mmin (min Mmax (+ M+count M-count)))) )]
+    (if (> new-gamma--margin-around-zero 1.0 )
+          pp
+          (assoc pp :gamma--margin-around-zero new-gamma--margin-around-zero))))
 
 
 
@@ -160,7 +163,7 @@
                    per-perceptron-totals))
           :else 0.0))))
 
-(defn gamma-auto-tune [pp error-before error-after]
+(defn eta-auto-tune [pp error-before error-after]
   (assoc pp :eta--learning-rate
     (let [eta--learning-rate (:eta--learning-rate pp)]
       ;;(println eta--learning-rate)
@@ -241,7 +244,7 @@
                    per-perceptron-totals-trained  (doall (map perceptron_value_fn  (m/slices (:pperceptron pp-trained))))
                    output-trained                 (sp--squashing-function (reduce + (doall (map #(if (pos? (m/scalar %)) 1.0 -1.0) per-perceptron-totals-trained))) (:rho--squashing-parameter pp-trained))
                    error-after                    (pp-error-function pp-trained per-perceptron-totals-trained output-trained target-output)]
-               (gamma-auto-tune pp-trained error-before error-after))
+               (eta-auto-tune pp-trained error-before error-after))
            pp-trained)
       ))
   (train-seq [pp input-output-seq]
@@ -281,11 +284,12 @@
 
 (defn make-resonable-pp "creates a pp with resonable defaults given user friendly parameters"
  ([inputsize epsilon zerod? & ops]
- (let [ {:keys [seed size-boost matrix-implementation eta--auto-tune?]
+ (let [ {:keys [seed size-boost matrix-implementation eta--auto-tune? gamma--tunning-rate]
          :or  {seed 0
                size-boost 1
                matrix-implementation :vectorz
-               eta--auto-tune? true}}  ops
+               eta--auto-tune? true
+               gamma--tunning-rate 0.1}}  ops
        pwidth      (+ inputsize 1)
        n-prez (int (* (/ 2 epsilon) size-boost))
        n     (cond (and zerod? (even? n-prez))
@@ -309,8 +313,8 @@
    epsilon                   ;; epsilon ; how accureate we want to be, must be > 0
    rho                       ;; rho--squashing-parameter ; An int. If set to 1, will force the pp to have binary output (-1,+1) in n is odd. Can be at most n. Typically set to  (/ 1 (* 2 epsilon))
    1.0                       ;; mu-zeromargin-importance ; The zero margin parameter. Typically 1.
-   0.01   ;was 0.5           ;; gamma--margin-around-zero ; Margin around zero of the perceptron. Needs to be controlled for best performance, else set between 0.01 to 0.5
-   0.1                       ;; gamma--tunning-rate ; 0 means gamma will not be tunned
+   0.01   ;was 0.5           ;; gamma--margin-around-zero ; Margin around zero of the perceptron. Is auto tuned. Needs to be controlled for best performance, else set between 0.01 to 0.5
+   gamma--tunning-rate       ;; gamma--tunning-rate ; 0 means gamma will not be tunned
    eta--auto-tune?           ;; eta--auto-tune? Default true, chooses if we should auto tune the learnig rate
   ))))
 

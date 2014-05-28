@@ -64,9 +64,8 @@
 (train ppa (ffirst input) (second (first input)))
 
 
-(def pp-trained  (let [n-epochs 400]
+(def pp-trained  (let [n-epochs 600]
                     (train-seq-epochs ppa input n-epochs)))
-(class 1.0)
 
 (read-out pp-trained [-1.0  1.0])   ;=> -1.0
 (read-out pp-trained [ 1.0  1.0])   ;=>  1.0
@@ -93,6 +92,18 @@
 (read-out pp-trained [ 0.9  0.9])  ;=>  1.0
 (read-out pp-trained [-0.9 -0.9])  ;=>  1.0
 (read-out pp-trained [ 0.9 -0.9])  ;=> -1.0
+
+(read-out pp-trained [-1.1  1.1])   ;=> -1.0
+(read-out pp-trained [ 1.1  1.1])   ;=>  1.0
+(read-out pp-trained [-1.1 -1.1])   ;=>  1.0
+(read-out pp-trained [ 1.1 -1.1])   ;=> -1.0
+
+(read-out pp-trained [-1.05  1.05])   ;=> -1.0
+(read-out pp-trained [ 1.05  1.05])   ;=>  1.0
+(read-out pp-trained [-1.05 -1.05])   ;=>  1.0
+(read-out pp-trained [ 1.05 -1.05])   ;=> -1.0
+
+
 
 
 (read-out pp-trained [ 0.0 -0.0])
