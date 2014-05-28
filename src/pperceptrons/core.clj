@@ -120,7 +120,7 @@
                                             (* gamma--tunning-rate
                                                (:eta--learning-rate pp)
                                                (- Mmin (min Mmax (+ M+count M-count)))) )]
-    (if (> new-gamma--margin-around-zero 0.1 )  ;;Not sure if this can be allowed to go high
+    (if (> new-gamma--margin-around-zero 0.5 )  ;;Not sure if this can be allowed to go high
           pp
           (assoc pp :gamma--margin-around-zero new-gamma--margin-around-zero))))
 
