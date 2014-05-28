@@ -2,7 +2,7 @@
 
 A Clojure library designed to implement [pperceptrons](http://www.igi.tugraz.at/psfiles/pdelta-journal.pdf) using core.matrix.
 
-Parallel perceptions (pperceptrons or pp's for short), via the p-delta learning rule, can approximate functions from R^n to the range [-1.0 , 1.0] to arbitrary accuracy given appropriate paramters.
+Parallel perceptrons (pperceptrons or pp's for short), via the p-delta learning rule, can approximate functions from R^n to the range [-1.0 , 1.0] to arbitrary accuracy given appropriate paramters.
 
 Read the paper to learn more.
 
@@ -104,7 +104,7 @@ WIP: a more advanced example would train on the Iris data set.
 Notes:
 
 - There are no guarantees of convergence or generalisation. Unless you feed a pp contradictory data, it should make progress towards a better approximation, given the epsilon of error you specified.
-- You may need to set `:size-boost` option to > 1 for complicated datasets to improve accuracy. 
+- You may need to set `:size-boost` option to > 1 for complicated datasets to improve accuracy.
 - If you want to create a pp manually, have a look at the `make-resonable-pp` implementation and the underlying record.
 
 
