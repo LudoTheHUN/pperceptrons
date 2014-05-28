@@ -120,7 +120,7 @@
                                             (* gamma--tunning-rate
                                                (:eta--learning-rate pp)
                                                (- Mmin (min Mmax (+ M+count M-count)))) )]
-    (if (> new-gamma--margin-around-zero 1.0 )
+    (if (> new-gamma--margin-around-zero 0.1 )  ;;Not sure if this can be allowed to go high
           pp
           (assoc pp :gamma--margin-around-zero new-gamma--margin-around-zero))))
 
@@ -250,7 +250,7 @@
   (train-seq [pp input-output-seq]
         (reduce (fn [xs [in out]] (train xs in out)) pp input-output-seq))
   (train-seq-epochs [pp input-output-seq n-epochs]
-             (reduce (fn [xs times] (train-seq xs input-output-seq)) pp (range n-epochs)))
+             (reduce (fn [xs times] (train-seq xs  input-output-seq)) pp (range n-epochs)))
   (anneal-eta [pp] (update-in pp [:eta--learning-rate] (fn [x] (* x 0.999)) ))  ;;WIP there is a specific non trivial algo for this based on error function
 )
 

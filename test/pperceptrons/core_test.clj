@@ -343,15 +343,15 @@ pp
                                         (if (= (nth x 4) "Iris-setosa")
                                                1.0 -1.0)
                                         (if (= (nth x 4) "Iris-virginica")
-                                               1.0 -0.1)
+                                               1.0 -1.0)
                                         (if (= (nth x 4) "Iris-versicolor")
-                                               1.0 -0.1)
+                                               1.0 -1.0)
                                         ])    iris-rsplit)
         ]
 
-   ; iris-in-out-form
+    iris-in-out-form
 
-    (shuffle iris-in-out-form)
+;    (shuffle iris-in-out-form)
     )
   )
 
@@ -363,19 +363,19 @@ iris-data
 
  ;;;WHY IS THE NOT PERFORMING!?!?!?!
 (def pp-iris-setosa
-  (test-trainging (make-resonable-pp 4 0.501 true :seed 42 :size-boost 1 :eta--auto-tune? true
+  (test-trainging (make-resonable-pp 4 0.501 false :seed 42 :size-boost 1 :eta--auto-tune? true
                                                 :gamma--tunning-rate 1.0)   ;;use boost to get more correct results if the input has more features
                                                  iris-data 800))
 
 (def pp-iris-virginica
-  (test-trainging (make-resonable-pp 4 0.501 true :seed 42 :size-boost 2 :eta--auto-tune? true
-                                                :gamma--tunning-rate 0.1)   ;;use boost to get more correct results if the input has more features
-                                                (shuffle (map (fn [x] [(first x) (nth x 2)])  iris-data))    6000))
+  (test-trainging (make-resonable-pp 4 0.501 false :seed 42 :size-boost 1 :eta--auto-tune? true
+                                                :gamma--tunning-rate 1.0)   ;;use boost to get more correct results if the input has more features
+                                                (shuffle (map (fn [x] [(first x) (nth x 2)])  iris-data))    2000))
 
 (def pp-iris-versicolor
-  (test-trainging (make-resonable-pp 4 0.501 true :seed 42 :size-boost 1 :eta--auto-tune? false
-                                                :gamma--tunning-rate 0.0)   ;;use boost to get more correct results if the input has more features
-                                                 (map (fn [x] [(first x) (nth x 3)])  iris-data)    1000))
+  (test-trainging (make-resonable-pp 4 0.501 false :seed 42 :size-boost 1 :eta--auto-tune? true
+                                                :gamma--tunning-rate 1.0)   ;;use boost to get more correct results if the input has more features
+                                                 (shuffle (map (fn [x] [(first x) (nth x 3)])  iris-data))    2000))
 
 
 (:correctness pp-iris-setosa)
@@ -389,8 +389,13 @@ iris-data
 
 
 
-(map (fn [x] [(second x) (read-out (:pp pp-iris) (first x))]  )  iris-data  )
-(frequencies (map (fn [x] [(second x) (read-out (:pp pp-iris) (first x))]  )  iris-data  ))
+(map (fn [x] [(second x) (read-out (:pp pp-iris-virginica) (first x))]  )  (map (fn [x] [(first x) (nth x 2)])  iris-data) )
+(frequencies (map (fn [x] [(second x) (read-out (:pp pp-iris-virginica) (first x))]  ) (map (fn [x] [(first x) (nth x 2)])  iris-data)  ))
+
+
+
+(map (fn [x] [(second x) (read-out (:pp pp-iris-versicolor) (first x))]  )  (map (fn [x] [(first x) (nth x 3)])  iris-data) )
+(frequencies (map (fn [x] [(second x) (read-out (:pp pp-iris-versicolor) (first x))]  ) (map (fn [x] [(first x) (nth x 3)])  iris-data)  ))
 
 
 
