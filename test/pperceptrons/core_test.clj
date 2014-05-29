@@ -247,7 +247,7 @@
 
 
             ;;assessing total error
-  (is (<
+  (is (<=
             (reduce +
                  (map (fn [x y] (m/abs (- x y)))
                    (let [pp (:pp (test-trainging (make-resonable-pp 2 0.125 false :seed 42 :size-boost 2)   ;;use boost to get more correct results if the input has more features
@@ -365,22 +365,38 @@ iris-data
 (def pp-iris-setosa
   (test-trainging (make-resonable-pp 4 0.501 false :seed 42 :size-boost 1 :eta--auto-tune? true
                                                 :gamma--tunning-rate 1.0)   ;;use boost to get more correct results if the input has more features
-                                                 iris-data 800))
+                                                 iris-data 1000))
 
 (def pp-iris-virginica
   (test-trainging (make-resonable-pp 4 0.501 false :seed 42 :size-boost 1 :eta--auto-tune? true
                                                 :gamma--tunning-rate 1.0)   ;;use boost to get more correct results if the input has more features
-                                                (shuffle (map (fn [x] [(first x) (nth x 2)])  iris-data))    2000))
+                                                 (map (fn [x] [(first x) (nth x 2)])  iris-data)    300))
 
 (def pp-iris-versicolor
-  (test-trainging (make-resonable-pp 4 0.501 false :seed 42 :size-boost 2 :eta--auto-tune? true
+  (test-trainging (make-resonable-pp 4 0.501 false :seed 42 :size-boost 1 :eta--auto-tune? true
                                                 :gamma--tunning-rate 1.0)   ;;use boost to get more correct results if the input has more features
-                                                 (shuffle (map (fn [x] [(first x) (nth x 3)])  iris-data))    5000))
+                                                 (map (fn [x] [(first x) (nth x 3)])  iris-data)    300))
+
+
+
+ ;;;;;;
+(def pp-iris-virginica
+  (test-trainging (conj (make-resonable-pp 4 0.501 false :seed 42 :size-boost 1 :eta--auto-tune? false
+                                                :gamma--tunning-rate 1.0)   ;;use boost to get more correct results if the input has more features
+                        [:eta--learning-rate 0.0001])
+                                                 (map (fn [x] [(first x) (nth x 2)])  iris-data)    300))
+
+(def pp-iris-versicolor
+  (test-trainging (conj (make-resonable-pp 4 0.501 false :seed 42 :size-boost 1 :eta--auto-tune? false
+                                                :gamma--tunning-rate 1.0)   ;;use boost to get more correct results if the input has more features
+                        [:eta--learning-rate 0.0001])
+                                                 (map (fn [x] [(first x) (nth x 3)])  iris-data)    300))
+;;;;;
 
 
 (:correctness pp-iris-setosa)
 (:correctness pp-iris-virginica)   ;43/75  ;why are we not getting this right??
-(:correctness pp-iris-versicolor)   ; 67/150 ;why are we not getting this right??
+(:correctness pp-iris-versicolor)   ; 67/150 ;why are we not getting this right?? (29/30 with 2000 epochs)
 
 
 (:pp pp-iris-setosa)

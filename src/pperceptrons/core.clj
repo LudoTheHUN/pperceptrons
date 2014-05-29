@@ -120,7 +120,7 @@
                                             (* gamma--tunning-rate
                                                (:eta--learning-rate pp)
                                                (- Mmin (min Mmax (+ M+count M-count)))) )]
-    (if (> new-gamma--margin-around-zero 0.5 )  ;;Not sure if this can be allowed to go high
+    (if (> new-gamma--margin-around-zero 0.9 )  ;;Not sure if this can be allowed to go high
           pp
           (assoc pp :gamma--margin-around-zero new-gamma--margin-around-zero))))
 
@@ -167,7 +167,7 @@
   (assoc pp :eta--learning-rate
     (let [eta--learning-rate (:eta--learning-rate pp)]
       ;;(println eta--learning-rate)
-      (cond (and (> error-before error-after) (< eta--learning-rate 0.01))
+      (cond (and (> error-before error-after) (< eta--learning-rate 0.01))  ;what is reasonable maximum learning rate?
               (* eta--learning-rate 1.1)    ;1.1  ;;Error decreased, speed up learning a bit
             (and (< error-before error-after) (> eta--learning-rate 0.000001))
               (* eta--learning-rate 0.5)
@@ -206,6 +206,15 @@
 
 ;;TODO DONE hookup training function
 
+(defn shuffle-seeded
+  "Return a random permutation of coll based on a seed"
+  [coll seed]
+  (let [al (java.util.ArrayList. coll)
+        random (java.util.Random. seed)]
+    (java.util.Collections/shuffle al random)
+    (clojure.lang.RT/vector (.toArray al))))
+
+;;(shuffle-seeded [1 2 3 4] 6)
 
 (extend-protocol PPperceptron
   pperceptron-record
@@ -250,7 +259,7 @@
   (train-seq [pp input-output-seq]
         (reduce (fn [xs [in out]] (train xs in out)) pp input-output-seq))
   (train-seq-epochs [pp input-output-seq n-epochs]
-             (reduce (fn [xs times] (train-seq xs  input-output-seq)) pp (range n-epochs)))
+             (reduce (fn [xs times] (train-seq xs  (shuffle-seeded input-output-seq times))) pp (range n-epochs)))
   (anneal-eta [pp] (update-in pp [:eta--learning-rate] (fn [x] (* x 0.999)) ))  ;;WIP there is a specific non trivial algo for this based on error function
 )
 
