@@ -370,12 +370,12 @@ iris-data
 (def pp-iris-virginica
   (test-trainging (make-resonable-pp 4 0.501 false :seed 42 :size-boost 1 :eta--auto-tune? true
                                                 :gamma--tunning-rate 1.0)   ;;use boost to get more correct results if the input has more features
-                                                 (map (fn [x] [(first x) (nth x 2)])  iris-data)    300))
+                                                 (map (fn [x] [(first x) (nth x 2)])  iris-data)    400))
 
 (def pp-iris-versicolor
   (test-trainging (make-resonable-pp 4 0.501 false :seed 42 :size-boost 1 :eta--auto-tune? true
                                                 :gamma--tunning-rate 1.0)   ;;use boost to get more correct results if the input has more features
-                                                 (map (fn [x] [(first x) (nth x 3)])  iris-data)    30))
+                                                 (map (fn [x] [(first x) (nth x 3)])  iris-data)    400))
 
 
 

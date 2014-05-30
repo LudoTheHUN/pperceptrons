@@ -169,9 +169,9 @@
     (let [eta--learning-rate (:eta--learning-rate pp)]
       ;;(println eta--learning-rate)
       (cond (and (> error-before error-after) (< eta--learning-rate 0.1))  ;what is reasonable maximum learning rate?
-              (* eta--learning-rate 1.1)    ;1.1  ;;Error decreased, speed up learning a bit   ;WIP
+              (* eta--learning-rate 1.01)    ;1.1  ;;Error decreased, speed up learning a bit   ;WIP
             (and (< error-before error-after) (> eta--learning-rate 0.00001))
-              (* eta--learning-rate 0.5)                                                       ;WIP
+              (* eta--learning-rate 0.9)                                                       ;WIP
             :else eta--learning-rate))))  ;0.5 ;;Error increase, slow down learning
 ;
 
@@ -308,7 +308,7 @@
                      (println [error-est-short error-est-long (:eta--learning-rate pp)   (:eta--learning-rate (eta-auto-tune pp-trained error-est-long error-est-short))])
                      )
 
-                   (eta-auto-tune pp-trained error-est-long error-est-short)
+                   (eta-auto-tune pp-trained error-est-long (* error-est-short 2))
 
                 )
               )
@@ -319,7 +319,7 @@
         (reduce (fn [xs [in out]] (train xs in out)) pp input-output-seq))
   (train-seq-epochs [pp input-output-seq n-epochs]
              (reduce (fn [xs times]
-                         (do #_(println "eta:"  (format "%.7f" (:eta--learning-rate xs)))
+                         (do (println "eta:"  (format "%.7f" (:eta--learning-rate xs)))
                              ;;TODO print end of epoch diagnostics here
                              (train-seq xs  (shuffle-seeded input-output-seq times))
                          )
@@ -393,7 +393,7 @@
      gamma--tunning-rate       ;; gamma--tunning-rate ; 0 means gamma will not be tunned
      eta--auto-tune?           ;; eta--auto-tune? Default true, chooses if we should auto tune the learnig rate
     )
-    (conj {:error-est-short (frug/make-frugal-estimator 0 0.1)
+    (conj {:error-est-short (frug/make-frugal-estimator 1 0.5)
            :error-est-long  (frug/make-frugal-estimator 0 0.95)
            })
    ))))
