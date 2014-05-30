@@ -308,7 +308,7 @@
                      (println [error-est-short error-est-long (:eta--learning-rate pp)   (:eta--learning-rate (eta-auto-tune pp-trained error-est-long error-est-short))])
                      )
 
-                   (eta-auto-tune pp-trained error-est-long (* error-est-short 2))
+                   (eta-auto-tune pp-trained error-est-long (* error-est-short 1.2 ))
 
                 )
               )
@@ -319,7 +319,12 @@
         (reduce (fn [xs [in out]] (train xs in out)) pp input-output-seq))
   (train-seq-epochs [pp input-output-seq n-epochs]
              (reduce (fn [xs times]
-                         (do (println "eta:"  (format "%.7f" (:eta--learning-rate xs)))
+                         (do (println "eta:"  (format "%.7f" (:eta--learning-rate xs))
+
+                                      " short-e:"(format "%.4f" ((:error-est-short xs) 1))
+                                      " long-e: "(format "%.4f" ((:error-est-long xs) 1))
+                                      " TODO :correctness"
+                                      )
                              ;;TODO print end of epoch diagnostics here
                              (train-seq xs  (shuffle-seeded input-output-seq times))
                          )
@@ -394,7 +399,7 @@
      eta--auto-tune?           ;; eta--auto-tune? Default true, chooses if we should auto tune the learnig rate
     )
     (conj {:error-est-short (frug/make-frugal-estimator 1 0.5)
-           :error-est-long  (frug/make-frugal-estimator 0 0.95)
+           :error-est-long  (frug/make-frugal-estimator 0 0.995)
            })
    ))))
 

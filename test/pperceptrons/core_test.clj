@@ -365,18 +365,21 @@ iris-data
 (def pp-iris-setosa
   (test-trainging (make-resonable-pp 4 0.501 false :seed 42 :size-boost 1 :eta--auto-tune? true
                                                 :gamma--tunning-rate 1.0)   ;;use boost to get more correct results if the input has more features
-                                                 iris-data 100))
+                                                 iris-data 30))
 
 (def pp-iris-virginica
   (test-trainging (make-resonable-pp 4 0.501 false :seed 42 :size-boost 1 :eta--auto-tune? true
                                                 :gamma--tunning-rate 1.0)   ;;use boost to get more correct results if the input has more features
-                                                 (map (fn [x] [(first x) (nth x 2)])  iris-data)    400))
+                                                 (map (fn [x] [(first x) (nth x 2)])  iris-data)    398))
+(:correctness pp-iris-virginica)   ;43/75  ;why are we not getting this right??
+
+;;ERROR fn IS WRONG SINCE IT SHOWS LESS ERRRO with more stuff incorrect?!
 
 (def pp-iris-versicolor
   (test-trainging (make-resonable-pp 4 0.501 false :seed 42 :size-boost 1 :eta--auto-tune? true
                                                 :gamma--tunning-rate 1.0)   ;;use boost to get more correct results if the input has more features
-                                                 (map (fn [x] [(first x) (nth x 3)])  iris-data)    400))
-
+                                                 (map (fn [x] [(first x) (nth x 3)])  iris-data)    420))
+(:correctness pp-iris-versicolor)
 
 
  ;;;;;;
@@ -435,4 +438,34 @@ iris-data
 
 (read-out (:pp pp-iris) [5.1 3.5 1.4 0.2] )
 
- )
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

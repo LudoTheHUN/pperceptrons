@@ -3,7 +3,7 @@
 
 (defn make-frugal-estimator [seed fage]
   (let [rnd (java.util.Random. seed)
-        estimate (atom 1.0)]
+        estimate (atom 10.0)]
     (fn [data-point]
         (let [random (.nextDouble rnd)]
           (if (> random fage)
