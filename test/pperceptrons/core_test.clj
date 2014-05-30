@@ -370,16 +370,27 @@ iris-data
 (def pp-iris-virginica
   (test-trainging (make-resonable-pp 4 0.501 false :seed 42 :size-boost 1 :eta--auto-tune? true
                                                 :gamma--tunning-rate 1.0)   ;;use boost to get more correct results if the input has more features
-                                                 (map (fn [x] [(first x) (nth x 2)])  iris-data)    400))
+                                                 (map (fn [x] [(first x) (nth x 2)])  iris-data)    300))
 
 (def pp-iris-versicolor
   (test-trainging (make-resonable-pp 4 0.501 false :seed 42 :size-boost 1 :eta--auto-tune? true
                                                 :gamma--tunning-rate 1.0)   ;;use boost to get more correct results if the input has more features
-                                                 (map (fn [x] [(first x) (nth x 3)])  iris-data)    400))
+                                                 (map (fn [x] [(first x) (nth x 3)])  iris-data)    30))
 
 
 
  ;;;;;;
+ (def pp-iris-virginica_a1
+  (test-trainging (conj (:pp pp-iris-virginica)   ;;use boost to get more correct results if the input has more features
+                        {:eta--learning-rate 0.00001
+                         :eta--auto-tune? false
+                         })
+                                                 (map (fn [x] [(first x) (nth x 2)])  iris-data)    2000))
+;;So we are stable with low enough learning rate....
+ (:correctness pp-iris-virginica_a1)
+ (frequencies (map (fn [x] [(second x) (read-out (:pp pp-iris-virginica_a1) (first x))]  ) (map (fn [x] [(first x) (nth x 2)])  iris-data)  ))
+
+
 (def pp-iris-virginica_1
   (test-trainging (conj (make-resonable-pp 4 0.501 false :seed 42 :size-boost 1 :eta--auto-tune? false
                                                 :gamma--tunning-rate 1.0)   ;;use boost to get more correct results if the input has more features
@@ -397,6 +408,7 @@ iris-data
 (:correctness pp-iris-setosa)
 (:correctness pp-iris-virginica)   ;43/75  ;why are we not getting this right??
 (:correctness pp-iris-versicolor)   ; 67/150 ;why are we not getting this right?? (29/30 with 2000 epochs)
+
 
 
 (:pp pp-iris-setosa)

@@ -319,8 +319,11 @@
         (reduce (fn [xs [in out]] (train xs in out)) pp input-output-seq))
   (train-seq-epochs [pp input-output-seq n-epochs]
              (reduce (fn [xs times]
-                       ;;TODO print end of epoch diagnostics here
-                       (train-seq xs  (shuffle-seeded input-output-seq times)))
+                         (do #_(println "eta:"  (format "%.7f" (:eta--learning-rate xs)))
+                             ;;TODO print end of epoch diagnostics here
+                             (train-seq xs  (shuffle-seeded input-output-seq times))
+                         )
+                       )
                      pp
                      (range n-epochs)))
   (anneal-eta [pp] (update-in pp [:eta--learning-rate] (fn [x] (* x 0.999)) ))  ;;WIP there is a specific non trivial algo for this based on error function
