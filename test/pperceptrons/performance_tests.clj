@@ -64,7 +64,7 @@
 (train ppa (ffirst input) (second (first input)))
 
 
-(def pp-trained  (let [n-epochs 600]
+(def pp-trained  (let [n-epochs 50]
                     (train-seq-epochs ppa input n-epochs)))
 
 (read-out pp-trained [-1.0  1.0])   ;=> -1.0

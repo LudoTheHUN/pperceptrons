@@ -164,14 +164,16 @@
                    per-perceptron-totals))
           :else 0.0))))
 
+
+
 (defn eta-auto-tune [pp error-before error-after]
   (assoc pp :eta--learning-rate
     (let [eta--learning-rate (:eta--learning-rate pp)]
       ;;(println eta--learning-rate)
-      (cond (and (> error-before error-after) (< eta--learning-rate 0.1))  ;what is reasonable maximum learning rate?
-              (* eta--learning-rate 1.01)    ;1.1  ;;Error decreased, speed up learning a bit   ;WIP
-            (and (< error-before error-after) (> eta--learning-rate 0.00001))
-              (* eta--learning-rate 0.9)                                                       ;WIP
+      (cond (and error-before error-after (> error-before error-after) (< eta--learning-rate 0.1))  ;what is reasonable maximum learning rate?
+              (* eta--learning-rate 1.1)    ;1.1  ;;Error decreased, speed up learning a bit   ;WIP
+            (and error-before error-after (< error-before error-after) (> eta--learning-rate 0.000000001))
+              (* eta--learning-rate 0.5)                                       ;WIP
             :else eta--learning-rate))))  ;0.5 ;;Error increase, slow down learning
 ;
 
@@ -179,6 +181,7 @@
       ;train the pp
       ;compute the error-value of trained pp given inputs output, target-output, this means recompute the per-perceptron-totals and output of the trained pp
       ;if error-value has decreased, * epsilon rate by 1.1, if error-value has increased , * epislon rate by 0.5
+
 
 
 (defprotocol PPperceptron
@@ -216,6 +219,22 @@
     (clojure.lang.RT/vector (.toArray al))))
 
 ;;(shuffle-seeded [1 2 3 4] 6)
+
+(defn pp-error-function-standalone "compute the pp error based on raw inputs."
+ [pp input target-output]
+ (let [output (read-out pp input)
+       z--input-vector        (input->z--input-array input)
+       perceptron_value_fn    (fn [perceptron] (m/scalar (m/mmul perceptron z--input-vector)))   ;;had to add m/scalar here to allow other matrix implementations
+       per-perceptron-totals  (doall (map perceptron_value_fn  (m/slices (:pperceptron pp))))   ]
+  (pp-error-function pp per-perceptron-totals output target-output)))
+
+
+(defn epoch-errors "all error values over in input-outpet-seq" [pp input-output-seq]
+  (map (fn [[input output]] (pp-error-function-standalone pp input output)) input-output-seq))
+
+(defn average [coll]
+  (/ (reduce + coll) (count coll)))
+
 
 (extend-protocol PPperceptron
   pperceptron-record
@@ -296,7 +315,7 @@
               ))
            pp-trained)
         ;4th eta auto tune using frugal long short error estimates
-        (if (:eta--auto-tune? pp)
+        #_(if (:eta--auto-tune? pp)
             (let  [;;not neede;  error-before                   (pp-error-function pp per-perceptron-totals output target-output)
                    per-perceptron-totals-trained  (doall (map perceptron_value_fn  (m/slices (:pperceptron pp-trained))))
                    output-trained                 (sp--squashing-function (reduce + (doall (map #(if (pos? (m/scalar %)) 1.0 -1.0) per-perceptron-totals-trained))) (:rho--squashing-parameter pp-trained))
@@ -313,26 +332,42 @@
                 )
               )
            pp-trained)
+        pp-trained
         ;;WIP, use memory of previous error to drive eta change...
       ))
   (train-seq [pp input-output-seq]
         (reduce (fn [xs [in out]] (train xs in out)) pp input-output-seq))
   (train-seq-epochs [pp input-output-seq n-epochs]
              (reduce (fn [xs times]
-                         (do (println "eta:"  (format "%.7f" (:eta--learning-rate xs))
+                       ;;TODO print end of epoch diagnostics here
+                         (do #_(println "eta:"  (format "%.12f" (:eta--learning-rate xs))
 
-                                      " short-e:"(format "%.4f" ((:error-est-short xs) 1))
-                                      " long-e: "(format "%.4f" ((:error-est-long xs) 1))
-                                      " TODO :correctness"
+                                      ;;" short-e:"(format "%.4f" ((:error-est-short xs) 1))
+                                      ;;" long-e: "(format "%.4f" ((:error-est-long xs) 1))
+                                      ;;" TODO :correctness"
+                                      ;;" epoch-errors-avg:" (average (epoch-errors xs input-output-seq))
+                                      " :avg-epoch-error " (format "%.12f" (:avg-epoch-error xs))
                                       )
-                             ;;TODO print end of epoch diagnostics here
-                             (train-seq xs  (shuffle-seeded input-output-seq times))
+                             ;;TODO epoch level eta tunning
+                             (if (:eta--auto-tune? xs)
+                                   (let [trained-pp (train-seq xs  (shuffle-seeded input-output-seq times))
+                                         avg-epoch-error (average (epoch-errors trained-pp input-output-seq))
+                                         prev-avg-epoch-error (:avg-epoch-error trained-pp)
+                                         ]
+                                      (-> trained-pp
+                                          (eta-auto-tune prev-avg-epoch-error avg-epoch-error)
+                                          (conj {:avg-epoch-error avg-epoch-error})
+                                     ))
+                                   (train-seq xs  (shuffle-seeded input-output-seq times))
+                               )
                          )
                        )
                      pp
                      (range n-epochs)))
   (anneal-eta [pp] (update-in pp [:eta--learning-rate] (fn [x] (* x 0.999)) ))  ;;WIP there is a specific non trivial algo for this based on error function
 )
+
+
 
 
 (defn uniform-dist-matrix-center-0
@@ -383,7 +418,6 @@
                    :else :this_should_never_happen!)
        rho-wip  (int (/ 1 (* 1 epsilon)))  ;;paper says 2, but this does not reconcile with example on page 6.
        rho      (if (= rho-wip 0) 1 rho-wip)]
-  (->
     (new pperceptron-record
     ; (scale-to-size-one (uniform-dist-matrix-center-0 matrix-implementation [n pwidth] seed))   ;; pperceptron ; the matrix holding the paralel perceptron weights which is as wide as the input +1 and as high as the number of perceptrons, n.
      (uniform-dist-matrix-center-0 matrix-implementation [n pwidth] seed)
@@ -398,10 +432,8 @@
      gamma--tunning-rate       ;; gamma--tunning-rate ; 0 means gamma will not be tunned
      eta--auto-tune?           ;; eta--auto-tune? Default true, chooses if we should auto tune the learnig rate
     )
-    (conj {:error-est-short (frug/make-frugal-estimator 1 0.5)
-           :error-est-long  (frug/make-frugal-estimator 0 0.995)
-           })
-   ))))
+
+   )))
 
 
 

@@ -120,32 +120,32 @@
   ;;Note that the size-boost is used
     (is (=
        (time
-        (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 1 0.501 false :seed x :size-boost 5 :eta--auto-tune? true)   ;;use boost to get more correct results if the input has more features
-                                                          data-1d-binary-fn-data  300)           ;;epochs
+        (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 1 0.501 false :seed x :size-boost 9 :eta--auto-tune? true)   ;;use boost to get more correct results if the input has more features
+                                                          data-1d-binary-fn-data  100)           ;;epochs
                                                          )) (range 4)  )))
          );;how many seeds to try
           '([1 4])))
 
     (is (=
-         (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 2 0.501 false :seed x :size-boost 1)   ;;use boost to get more correct results if the input has more features
-                                                          data-2d-binary-XOR-data  400)           ;;epochs
+         (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 2 0.501 false :seed x :size-boost 2)   ;;use boost to get more correct results if the input has more features
+                                                          data-2d-binary-XOR-data  100)           ;;epochs
                                                          )) (range 4)  )))   ;;how many seeds to try
           '([1 4])))
 
     (is (=
          (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 2 0.501 false :seed x :size-boost 2)   ;;use boost to get more correct results if the input has more features
-                                                          data-2d-binary-fn-data  300)           ;;epochs
+                                                          data-2d-binary-fn-data  100)           ;;epochs
                                                          )) (range 4)  )))   ;;how many seeds to try
           '([1 4])))
 
     (is (=
-         (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 2 0.5 true :seed x :size-boost 4)   ;;use boost to get more correct results if the input has more features
-                                                          data-2d-3way-fn-data  300)           ;;epochs
+         (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 2 0.5 true :seed x :size-boost 6)   ;;use boost to get more correct results if the input has more features
+                                                          data-2d-3way-fn-data  100)           ;;epochs
                                                          )) (range 4)  )))   ;;how many seeds to try
           '([1 4])))
     (is (=
-         (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 3 0.5 true :seed x :size-boost 2)   ;;use boost to get more correct results if the input has more features
-                                                          data-3d-3way-fn-data  300)           ;;epochs
+         (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 3 0.5 true :seed x :size-boost 3)   ;;use boost to get more correct results if the input has more features
+                                                          data-3d-3way-fn-data  100)           ;;epochs
                                                          )) (range 4)  )))   ;;how many seeds to try
           '([1 4])))
  )
@@ -169,6 +169,12 @@
 (:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 2 0.501 false :seed 42 :size-boost 2)   data-2d-binary-fn-data   100)))
 (:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 2 0.5 true :seed 42 :size-boost 4)      data-2d-3way-fn-data     100)))
 (:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 3 0.5 true :seed 42 :size-boost 2)      data-3d-3way-fn-data     100)))
+
+(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 1 0.501 false :seed 42 :size-boost 5)   data-1d-binary-fn-data   10)))
+(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 2 0.501 false :seed 42 :size-boost 1)   data-2d-binary-XOR-data  10)))
+(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 2 0.501 false :seed 42 :size-boost 2)   data-2d-binary-fn-data   10)))
+(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 2 0.5 true :seed 42 :size-boost 4)      data-2d-3way-fn-data     10)))
+(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 3 0.5 true :seed 42 :size-boost 2)      data-3d-3way-fn-data     10)))
 
 
 (:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 1 0.501 false :seed 42 :size-boost 5)   data-1d-binary-fn-data   1)))
@@ -239,8 +245,8 @@
 
 (deftest testing-on-some-analytical-funcion
  (is (=
-       (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 2 0.126 false :seed x :size-boost 2)   ;;use boost to get more correct results if the input has more features
-                                                                 some-analytical-fn-data 150)           ;;epochs
+       (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 2 0.126 false :seed x :size-boost 7)   ;;use boost to get more correct results if the input has more features
+                                                                 some-analytical-fn-data 100)           ;;epochs
                                                            )) (range 42 53)  )))
 
       '([1 11])))
@@ -250,8 +256,8 @@
   (is (<=
             (reduce +
                  (map (fn [x y] (m/abs (- x y)))
-                   (let [pp (:pp (test-trainging (make-resonable-pp 2 0.125 false :seed 42 :size-boost 2)   ;;use boost to get more correct results if the input has more features
-                                                   some-analytical-fn-data 200))]
+                   (let [pp (:pp (test-trainging (make-resonable-pp 2 0.125 false :seed 42 :size-boost 3)   ;;use boost to get more correct results if the input has more features
+                                                   some-analytical-fn-data 100))]
                                (map  (fn [[x y]] (read-out pp  [x y]))   (range-2d -1 1 0.5)))
                     (map second some-analytical-fn-data)))
        1.0))  ;1.375
@@ -273,8 +279,8 @@
 
 
 
-(def pp (test-trainging (make-resonable-pp 2  0.0624 true :seed 42 :size-boost 3 :eta--auto-tune? true)   ;;use boost to get more correct results if the input has more features
-                                                   some-analytical-fn-data 400))
+(def pp (test-trainging (make-resonable-pp 2  0.0624 true :seed 42 :size-boost 4 :eta--auto-tune? true)   ;;use boost to get more correct results if the input has more features
+                                                   some-analytical-fn-data 100))
 
 pp
 
@@ -370,28 +376,49 @@ iris-data
 (def pp-iris-virginica
   (test-trainging (make-resonable-pp 4 0.501 false :seed 42 :size-boost 1 :eta--auto-tune? true
                                                 :gamma--tunning-rate 1.0)   ;;use boost to get more correct results if the input has more features
-                                                 (map (fn [x] [(first x) (nth x 2)])  iris-data)    398))
+                                                 (map (fn [x] [(first x) (nth x 2)])  iris-data)    100))
 (:correctness pp-iris-virginica)   ;43/75  ;why are we not getting this right??
+
+
+(epoch-errors (:pp pp-iris-virginica) (map (fn [x] [(first x) (nth x 2)])  iris-data))
+(pp-error-function-standalone  (:pp pp-iris-virginica) [6.4 2.8 5.6 2.1] 1.0)
+(pp-error-function-standalone  (:pp pp-iris-virginica) [5.9 3.0 5.1 1.8] 1.0)
+
+
 
 ;;ERROR fn IS WRONG SINCE IT SHOWS LESS ERRRO with more stuff incorrect?!
 
 (def pp-iris-versicolor
   (test-trainging (make-resonable-pp 4 0.501 false :seed 42 :size-boost 1 :eta--auto-tune? true
                                                 :gamma--tunning-rate 1.0)   ;;use boost to get more correct results if the input has more features
-                                                 (map (fn [x] [(first x) (nth x 3)])  iris-data)    420))
+                                                 (map (fn [x] [(first x) (nth x 3)])  iris-data)    15))
 (:correctness pp-iris-versicolor)
+
+
 
 
  ;;;;;;
  (def pp-iris-virginica_a1
   (test-trainging (conj (:pp pp-iris-virginica)   ;;use boost to get more correct results if the input has more features
-                        {:eta--learning-rate 0.00001
-                         :eta--auto-tune? false
-                         })
-                                                 (map (fn [x] [(first x) (nth x 2)])  iris-data)    2000))
+                        {:eta--learning-rate 0.01
+                         :eta--auto-tune? true
+                         }
+                        {})
+                                                 (map (fn [x] [(first x) (nth x 3)])  iris-data)    30))
 ;;So we are stable with low enough learning rate....
  (:correctness pp-iris-virginica_a1)
- (frequencies (map (fn [x] [(second x) (read-out (:pp pp-iris-virginica_a1) (first x))]  ) (map (fn [x] [(first x) (nth x 2)])  iris-data)  ))
+ (average (epoch-errors (:pp pp-iris-virginica_a1) (map (fn [x] [(first x) (nth x 3)])  iris-data)))
+
+ (frequencies (map (fn [x] [(second x) (read-out (:pp pp-iris-virginica_a1) (first x))]  ) (map (fn [x] [(first x) (nth x 3)])  iris-data)  ))
+
+
+(average (epoch-errors (:pp pp-iris-virginica_a1) (map (fn [x] [(first x) (nth x 2)])  iris-data)))
+
+
+(pp-error-function-standalone  (:pp pp-iris-virginica_a1) [6.4 2.8 5.6 2.1] 1.0)
+(pp-error-function-standalone  (:pp pp-iris-virginica_a1) [5.9 3.0 5.1 1.8] 1.0)
+
+
 
 
 (def pp-iris-virginica_1
