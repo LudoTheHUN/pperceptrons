@@ -120,9 +120,10 @@
   ;;Note that the size-boost is used
     (is (=
        (time
-        (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 1 0.501 false :seed x :size-boost 9 :eta--auto-tune? true)   ;;use boost to get more correct results if the input has more features
+        (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 1 0.501 false :seed x :size-boost 4 :eta--auto-tune? true)   ;;use boost to get more correct results if the input has more features
                                                           data-1d-binary-fn-data  100)           ;;epochs
-                                                         )) (range 4)  )))
+                                                         )) (range 1)  )))   ;;we flat line on minimal eta while error very slowly grows
+
          );;how many seeds to try
           '([1 4])))
 

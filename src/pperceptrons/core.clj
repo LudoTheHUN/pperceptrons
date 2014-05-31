@@ -340,7 +340,7 @@
   (train-seq-epochs [pp input-output-seq n-epochs]
              (reduce (fn [xs times]
                        ;;TODO print end of epoch diagnostics here
-                         (do #_(println "eta:"  (format "%.12f" (:eta--learning-rate xs))
+                         (do (println "eta:"  (format "%.12f" (:eta--learning-rate xs))
 
                                       ;;" short-e:"(format "%.4f" ((:error-est-short xs) 1))
                                       ;;" long-e: "(format "%.4f" ((:error-est-long xs) 1))
@@ -436,7 +436,7 @@
    )))
 
 
-
+;;TODO clean out old eta training attempts
 
 #_(make-resonable-pp 3 0.5 true :seed 43 :size-boost 3)
 #_(make-resonable-pp 3 0.5 true)
