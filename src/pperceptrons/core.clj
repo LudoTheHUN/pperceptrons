@@ -272,77 +272,8 @@
                                                (:mu-zeromargin-importance pp)
                                                (:gamma--margin-around-zero pp)
                                               )))
-      ;      error-before                   (pp-error-function pp per-perceptron-totals output target-output)
-      ;      per-perceptron-totals-trained  (doall (map perceptron_value_fn  (m/slices (:pperceptron pp-trained))))
-      ;      output-trained                 (sp--squashing-function (reduce + (doall (map #(if (pos? (m/scalar %)) 1.0 -1.0) per-perceptron-totals-trained))) (:rho--squashing-parameter pp-trained))
-      ;      error-after                    (pp-error-function pp-trained per-perceptron-totals-trained output-trained target-output)
             ]
-       ;;eta auto tune that is local to a single update, this does not work well at all...
-       #_(if (:eta--auto-tune? pp)
-            (let  [error-before                   (pp-error-function pp per-perceptron-totals output target-output)
-                   per-perceptron-totals-trained  (doall (map perceptron_value_fn  (m/slices (:pperceptron pp-trained))))
-                   output-trained                 (sp--squashing-function (reduce + (doall (map #(if (pos? (m/scalar %)) 1.0 -1.0) per-perceptron-totals-trained))) (:rho--squashing-parameter pp-trained))
-                   error-after                    (pp-error-function pp-trained per-perceptron-totals-trained output-trained target-output)]
-               (do
-                 #_(if true ;(< error-before error-after)
-                     (println [error-before error-after (:eta--learning-rate pp)   (:eta--learning-rate (eta-auto-tune pp-trained error-before error-after))])
-                   )
-                (eta-auto-tune pp-trained error-before error-after)
-                )
-              )
-           pp-trained)
-         ;;Alternaitve interpretation of eta update rule, considering error values from previous example data, does not work well since we reduce eta to minimal amount and stay there.
-        #_(if (:eta--auto-tune? pp)
-            (let  [error-now                   (pp-error-function pp per-perceptron-totals output target-output)
-                   error-prev                  (:prev-error pp)
-                   ]
-              (do
-                 #_(if (and error-prev (< error-prev error-now)
-                          )
-                    (println [error-now error-prev (:eta--learning-rate pp)   (:eta--learning-rate (eta-auto-tune pp-trained error-prev error-now))])
-                   )
-
-                (if error-prev (conj (eta-auto-tune pp-trained error-prev error-now) [:prev-error error-now])
-                               (conj pp-trained [:prev-error error-now]))
-              ))
-             pp-trained)
-        ;;3rd interpretation of eta update, based on the delta of eta to previous eta, but both after a learning update
-          #_(if (:eta--auto-tune? pp)
-            (let  [;;not neede;  error-before                   (pp-error-function pp per-perceptron-totals output target-output)
-                   per-perceptron-totals-trained  (doall (map perceptron_value_fn  (m/slices (:pperceptron pp-trained))))
-                   output-trained                 (sp--squashing-function (reduce + (doall (map #(if (pos? (m/scalar %)) 1.0 -1.0) per-perceptron-totals-trained))) (:rho--squashing-parameter pp-trained))
-                   error-after                    (pp-error-function pp-trained per-perceptron-totals-trained output-trained target-output)
-                   error-after-prev               (:prev-error pp)]
-               (do
-                 #_(if (and error-after-prev (< error-after-prev error-after))
-                     (println [error-after-prev error-after (:eta--learning-rate pp)   (:eta--learning-rate (eta-auto-tune pp-trained error-after-prev error-after))])
-                   )
-                (if error-after-prev
-                      (conj (eta-auto-tune pp-trained error-after-prev error-after) [:prev-error error-after])
-                      (conj pp-trained [:prev-error error-after])
-                )
-              ))
-           pp-trained)
-        ;4th eta auto tune using frugal long short error estimates
-        #_(if (:eta--auto-tune? pp)
-            (let  [;;not neede;  error-before                   (pp-error-function pp per-perceptron-totals output target-output)
-                   per-perceptron-totals-trained  (doall (map perceptron_value_fn  (m/slices (:pperceptron pp-trained))))
-                   output-trained                 (sp--squashing-function (reduce + (doall (map #(if (pos? (m/scalar %)) 1.0 -1.0) per-perceptron-totals-trained))) (:rho--squashing-parameter pp-trained))
-                   error-after                    (pp-error-function pp-trained per-perceptron-totals-trained output-trained target-output)
-                   error-est-short                ((:error-est-short pp) error-after)
-                   error-est-long                 ((:error-est-long  pp) error-after)]
-               (do
-                 #_(if (and true (< error-est-long error-est-short))
-                     (println [error-est-short error-est-long (:eta--learning-rate pp)   (:eta--learning-rate (eta-auto-tune pp-trained error-est-long error-est-short))])
-                     )
-
-                   (eta-auto-tune pp-trained error-est-long (* error-est-short 1.2 ))
-
-                )
-              )
-           pp-trained)
         pp-trained
-        ;;WIP, use memory of previous error to drive eta change...
       ))
   (train-seq [pp input-output-seq]
         (reduce (fn [xs [in out]] (train xs in out)) pp input-output-seq))
