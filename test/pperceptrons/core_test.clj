@@ -167,11 +167,11 @@
 
 
 (quote   "gama evolution over the synthetic problems"
-(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 1 0.501 false :seed 42 :size-boost 5)   data-1d-binary-fn-data   3000)))
-(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 2 0.501 false :seed 42 :size-boost 1)   data-2d-binary-XOR-data  3000)))
-(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 2 0.501 false :seed 42 :size-boost 2)   data-2d-binary-fn-data   3000)))
-(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 2 0.5 true :seed 42 :size-boost 4)      data-2d-3way-fn-data     3000)))
-(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 3 0.5 true :seed 42 :size-boost 2)      data-3d-3way-fn-data     3000)))
+(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 1 0.501 false :seed 42 :size-boost 5)   data-1d-binary-fn-data   1000)))
+(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 2 0.501 false :seed 42 :size-boost 1)   data-2d-binary-XOR-data  1000)))
+(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 2 0.501 false :seed 42 :size-boost 2)   data-2d-binary-fn-data   1000)))
+(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 2 0.5 true :seed 42 :size-boost 4)      data-2d-3way-fn-data     1000)))
+(:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 3 0.5 true :seed 42 :size-boost 2)      data-3d-3way-fn-data     1000)))
 
 (:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 1 0.501 false :seed 42 :size-boost 5)   data-1d-binary-fn-data   300)))
 (:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 2 0.501 false :seed 42 :size-boost 1)   data-2d-binary-XOR-data  300)))
@@ -199,11 +199,11 @@
 (:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 3 0.5 true :seed 42 :size-boost 2)      data-3d-3way-fn-data     1)))
 
          ;;---
-(:eta--learning-rate (:pp (test-trainging (make-resonable-pp 1 0.501 false :seed 42 :size-boost 5)   data-1d-binary-fn-data   3000)))
-(:eta--learning-rate (:pp (test-trainging (make-resonable-pp 2 0.501 false :seed 42 :size-boost 1)   data-2d-binary-XOR-data  3000)))
-(:eta--learning-rate (:pp (test-trainging (make-resonable-pp 2 0.501 false :seed 42 :size-boost 2)   data-2d-binary-fn-data   3000)))
-(:eta--learning-rate (:pp (test-trainging (make-resonable-pp 2 0.5 true :seed 42 :size-boost 4)      data-2d-3way-fn-data     3000)))
-(:eta--learning-rate (:pp (test-trainging (make-resonable-pp 3 0.5 true :seed 42 :size-boost 2)      data-3d-3way-fn-data     3000)))
+(:eta--learning-rate (:pp (test-trainging (make-resonable-pp 1 0.501 false :seed 42 :size-boost 5)   data-1d-binary-fn-data   1000)))
+(:eta--learning-rate (:pp (test-trainging (make-resonable-pp 2 0.501 false :seed 42 :size-boost 1)   data-2d-binary-XOR-data  1000)))
+(:eta--learning-rate (:pp (test-trainging (make-resonable-pp 2 0.501 false :seed 42 :size-boost 2)   data-2d-binary-fn-data   1000)))
+(:eta--learning-rate (:pp (test-trainging (make-resonable-pp 2 0.5 true :seed 42 :size-boost 4)      data-2d-3way-fn-data     1000)))
+(:eta--learning-rate (:pp (test-trainging (make-resonable-pp 3 0.5 true :seed 42 :size-boost 2)      data-3d-3way-fn-data     1000)))
 
 (:eta--learning-rate (:pp (test-trainging (make-resonable-pp 1 0.501 false :seed 42 :size-boost 5)   data-1d-binary-fn-data   300)))
 (:eta--learning-rate (:pp (test-trainging (make-resonable-pp 2 0.501 false :seed 42 :size-boost 1)   data-2d-binary-XOR-data  300)))
