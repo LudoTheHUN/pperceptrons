@@ -120,9 +120,9 @@
   ;;Note that the size-boost is used
     (is (=
        (time
-        (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 1 0.501 false :seed x :size-boost 4 :eta--auto-tune? true)   ;;use boost to get more correct results if the input has more features
+        (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 1 0.501 false :seed x :size-boost 6 :eta--auto-tune? true)   ;;use boost to get more correct results if the input has more features
                                                           data-1d-binary-fn-data  100)           ;;epochs
-                                                         )) (range 1)  )))   ;;we flat line on minimal eta while error very slowly grows
+                                                         )) (range 10) )))   ;;we flat line on minimal eta while error very slowly grows
 
          );;how many seeds to try
           '([1 4])))
@@ -151,6 +151,20 @@
           '([1 4])))
  )
 ;;Note that as the dimention of the input, the pp naturally got larger and did not need boosting at 3d, given 9 inputs
+
+  (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 1 0.501 false :seed x :size-boost 3 :eta--auto-tune? true)   ;;use boost to get more correct results if the input has more features
+                                                          data-1d-binary-fn-data  100)           ;;epochs
+                                                         )) #_(range 4) [2] )))
+
+
+
+#_(let [pp (:pp (test-trainging (make-resonable-pp 1 0.1 false :seed 1 :size-boost 4
+                                                 :eta--auto-tune? true
+                                                 :eta--learning-rate 0.1)   ;;use boost to get more correct results if the input has more features
+                                                          data-1d-binary-fn-data  4000))
+      a (map (fn [x] [x (read-out pp [x])]) (range -1.0 1.0 0.1))   ]
+  a)
+
 
 (quote   "gama evolution over the synthetic problems"
 (:gamma--margin-around-zero (:pp (test-trainging (make-resonable-pp 1 0.501 false :seed 42 :size-boost 5)   data-1d-binary-fn-data   3000)))
@@ -280,7 +294,7 @@
 
 
 
-(def pp (test-trainging (make-resonable-pp 2  0.0624 true :seed 42 :size-boost 4 :eta--auto-tune? true)   ;;use boost to get more correct results if the input has more features
+(def pp (test-trainging (make-resonable-pp 2  0.0624 true :seed 42 :size-boost 1 :eta--auto-tune? true)   ;;use boost to get more correct results if the input has more features
                                                    some-analytical-fn-data 100))
 
 pp

@@ -6,7 +6,12 @@
 
 ;;TODO DONE clean out to tests
 ;;TODO doc strings
-;;TODO think about dynamics of eta--learning-rate and gamma--margin-around-zero
+;;TODO DONE think about dynamics of eta--learning-rate DONE and gamma--margin-around-zero DONE
+
+;;TODO cleanup eta--learning-rate tunning
+;;TODO refactor tests to not inject into Pperceptron, but add to it
+;;TODO Add diagnostics printing + addition of diagnostic data into pp with extra options, but not pp record properties
+
 
 ;(m/set-current-implementation :persistent-vector)
 ;(m/set-current-implementation :vectorz)
@@ -17,6 +22,8 @@
 ;https://github.com/mikera/core.matrix/blob/master/src/main/clojure/clojure/core/matrix/examples.clj
 ;https://github.com/clojure-numerics/core.matrix.stats/blob/develop/src/main/clojure/clojure/core/matrix/random.clj
 ;http://www.igi.tugraz.at/psfiles/pdelta-journal.pdf
+
+
 
 
 #_(m/set-current-implementation :persistent-vector)
@@ -170,7 +177,9 @@
   (assoc pp :eta--learning-rate
     (let [eta--learning-rate (:eta--learning-rate pp)]
       ;;(println eta--learning-rate)
-      (cond (and error-before error-after (> error-before error-after) (< eta--learning-rate 0.1))  ;what is reasonable maximum learning rate?
+      (cond (and error-before error-after (< eta--learning-rate 0.000000002))
+              0.001   ;;if we hit rock bottom, rock the boat a bit
+            (and error-before error-after (> error-before error-after) (< eta--learning-rate 0.1))  ;what is reasonable maximum learning rate?
               (* eta--learning-rate 1.1)    ;1.1  ;;Error decreased, speed up learning a bit   ;WIP
             (and error-before error-after (< error-before error-after) (> eta--learning-rate 0.000000001))
               (* eta--learning-rate 0.5)                                       ;WIP
@@ -232,7 +241,7 @@
 (defn epoch-errors "all error values over in input-outpet-seq" [pp input-output-seq]
   (map (fn [[input output]] (pp-error-function-standalone pp input output)) input-output-seq))
 
-(defn average [coll]
+(defn average [coll]  ;;TODO use core.matrix's average
   (/ (reduce + coll) (count coll)))
 
 
@@ -351,7 +360,7 @@
                              ;;TODO epoch level eta tunning
                              (if (:eta--auto-tune? xs)
                                    (let [trained-pp (train-seq xs  (shuffle-seeded input-output-seq times))
-                                         avg-epoch-error (average (epoch-errors trained-pp input-output-seq))
+                                         avg-epoch-error (average (epoch-errors trained-pp input-output-seq))   ;do we want to do this fully streaming?... then we'd need a lookback horizon over which to average error, lift this out as stand alone so it could be used in streaming
                                          prev-avg-epoch-error (:avg-epoch-error trained-pp)
                                          ]
                                       (-> trained-pp
