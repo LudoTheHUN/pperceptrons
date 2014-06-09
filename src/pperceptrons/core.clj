@@ -381,7 +381,5 @@
    )))
 
 
-;;TODO clean out old eta training attempts
-
 #_(make-resonable-pp 3 0.5 true :seed 43 :size-boost 3)
 #_(make-resonable-pp 3 0.5 true)
