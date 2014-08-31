@@ -51,7 +51,6 @@
 ;;binary-pp example
 
 
-
 (def data-1d-binary-fn-data [
     [[-1.0] -1.0] [[-0.9]  1.0] [[-0.8] -1.0]
     [[-0.5]  1.0] [[ 0.0] -1.0] [[ 0.5]  1.0]
@@ -125,7 +124,7 @@
                                                          )) (range 10) )))   ;;we flat line on minimal eta while error very slowly grows
 
          );;how many seeds to try
-          '([1 4])))
+          '([1 10])))
 
     (is (=
          (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 2 0.501 false :seed x :size-boost 2)   ;;use boost to get more correct results if the input has more features
@@ -152,10 +151,10 @@
  )
 ;;Note that as the dimention of the input, the pp naturally got larger and did not need boosting at 3d, given 9 inputs
 
-  (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 1 0.501 false :seed x :size-boost 3 :eta--auto-tune? true)   ;;use boost to get more correct results if the input has more features
+  (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 1 0.501 false :seed x :size-boost 6 :eta--auto-tune? true)   ;;use boost to get more correct results if the input has more features
                                                           data-1d-binary-fn-data  100)           ;;epochs
-                                                         )) #_(range 4) [2] )))
-
+                                                         )) (range 4) #_[3] )))
+;;TODO meta search the space as a feature, from cheaper basic :size-boost , up, and with more and more training time...
 
 
 #_(let [pp (:pp (test-trainging (make-resonable-pp 1 0.1 false :seed 1 :size-boost 4
@@ -259,12 +258,13 @@
 ;;TODO make this another of the tests
 
 (deftest testing-on-some-analytical-funcion
- (is (=
-       (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 2 0.126 false :seed x :size-boost 7)   ;;use boost to get more correct results if the input has more features
-                                                                 some-analytical-fn-data 100)           ;;epochs
-                                                           )) (range 42 53)  )))
 
-      '([1 11])))
+
+ (is (=
+      (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 2 0.126 false :seed x :size-boost 3)   ;;use boost to get more correct results if the input has more features
+                                                                     some-analytical-fn-data 500)           ;;epochs
+                                                     )) #_(range 42 53) (range 4)  )))
+      '([1 4])))
 
 
             ;;assessing total error
@@ -352,135 +352,6 @@ pp
 
 
 
-
-(def iris-data
-  (let [iris-rawdata  (slurp "./test/resources/iris.data")
-        iris-lsplit   (clojure.string/split-lines iris-rawdata)
-        iris-rsplit   (map (fn [x] (clojure.string/split x #",")) iris-lsplit)
-        iris-in-out-form (map (fn [x]  [[(. Double parseDouble (nth x 0 ))
-                                         (. Double parseDouble (nth x 1 ))
-                                         (. Double parseDouble (nth x 2 ))
-                                         (. Double parseDouble (nth x 3 ))]
-                                        (if (= (nth x 4) "Iris-setosa")
-                                               1.0 -1.0)
-                                        (if (= (nth x 4) "Iris-virginica")
-                                               1.0 -1.0)
-                                        (if (= (nth x 4) "Iris-versicolor")
-                                               1.0 -1.0)
-                                        ])    iris-rsplit)
-        ]
-
-    iris-in-out-form
-
-;    (shuffle iris-in-out-form)
-    )
-  )
-
-
-iris-data
-
-(quote
-
-
- ;;;WHY IS THE NOT PERFORMING!?!?!?!
-(def pp-iris-setosa
-  (test-trainging (make-resonable-pp 4 0.501 false :seed 42 :size-boost 1 :eta--auto-tune? true
-                                                :gamma--tunning-rate 1.0)   ;;use boost to get more correct results if the input has more features
-                                                 iris-data 30))
-
-(def pp-iris-virginica
-  (test-trainging (make-resonable-pp 4 0.501 false :seed 42 :size-boost 1 :eta--auto-tune? true
-                                                :gamma--tunning-rate 1.0)   ;;use boost to get more correct results if the input has more features
-                                                 (map (fn [x] [(first x) (nth x 2)])  iris-data)    100))
-(:correctness pp-iris-virginica)   ;43/75  ;why are we not getting this right??
-
-
-(epoch-errors (:pp pp-iris-virginica) (map (fn [x] [(first x) (nth x 2)])  iris-data))
-(pp-error-function-standalone  (:pp pp-iris-virginica) [6.4 2.8 5.6 2.1] 1.0)
-(pp-error-function-standalone  (:pp pp-iris-virginica) [5.9 3.0 5.1 1.8] 1.0)
-
-
-
-;;ERROR fn IS WRONG SINCE IT SHOWS LESS ERRRO with more stuff incorrect?!
-
-(def pp-iris-versicolor
-  (test-trainging (make-resonable-pp 4 0.501 false :seed 42 :size-boost 1 :eta--auto-tune? true
-                                                :gamma--tunning-rate 1.0)   ;;use boost to get more correct results if the input has more features
-                                                 (map (fn [x] [(first x) (nth x 3)])  iris-data)    15))
-(:correctness pp-iris-versicolor)
-
-
-
-
- ;;;;;;
- (def pp-iris-virginica_a1
-  (test-trainging (conj (:pp pp-iris-virginica)   ;;use boost to get more correct results if the input has more features
-                        {:eta--learning-rate 0.01
-                         :eta--auto-tune? true
-                         }
-                        {})
-                                                 (map (fn [x] [(first x) (nth x 3)])  iris-data)    30))
-;;So we are stable with low enough learning rate....
- (:correctness pp-iris-virginica_a1)
- (average (epoch-errors (:pp pp-iris-virginica_a1) (map (fn [x] [(first x) (nth x 3)])  iris-data)))
-
- (frequencies (map (fn [x] [(second x) (read-out (:pp pp-iris-virginica_a1) (first x))]  ) (map (fn [x] [(first x) (nth x 3)])  iris-data)  ))
-
-
-(average (epoch-errors (:pp pp-iris-virginica_a1) (map (fn [x] [(first x) (nth x 2)])  iris-data)))
-
-
-(pp-error-function-standalone  (:pp pp-iris-virginica_a1) [6.4 2.8 5.6 2.1] 1.0)
-(pp-error-function-standalone  (:pp pp-iris-virginica_a1) [5.9 3.0 5.1 1.8] 1.0)
-
-
-
-
-(def pp-iris-virginica_1
-  (test-trainging (conj (make-resonable-pp 4 0.501 false :seed 42 :size-boost 1 :eta--auto-tune? false
-                                                :gamma--tunning-rate 1.0)   ;;use boost to get more correct results if the input has more features
-                        [:eta--learning-rate 0.0001])
-                                                 (map (fn [x] [(first x) (nth x 2)])  iris-data)    300))
-
-(def pp-iris-versicolor_1
-  (test-trainging (conj (make-resonable-pp 4 0.501 false :seed 42 :size-boost 1 :eta--auto-tune? false
-                                                :gamma--tunning-rate 1.0)   ;;use boost to get more correct results if the input has more features
-                        [:eta--learning-rate 0.0001])
-                                                 (map (fn [x] [(first x) (nth x 3)])  iris-data)    300))
-;;;;;
-
-
-(:correctness pp-iris-setosa)
-(:correctness pp-iris-virginica)   ;43/75  ;why are we not getting this right??
-(:correctness pp-iris-versicolor)   ; 67/150 ;why are we not getting this right?? (29/30 with 2000 epochs)
-
-
-
-(:pp pp-iris-setosa)
-(:pp pp-iris-virginica)
-(:pp pp-iris-virginica_1)
-(:pp pp-iris-versicolor)
-
-
-
-
-((:error-est-short (:pp pp-iris-virginica)) 0.1)
-((:error-est-long (:pp pp-iris-virginica)) 0.1)
-
-
-(map (fn [x] [(second x) (read-out (:pp pp-iris-virginica) (first x))]  )  (map (fn [x] [(first x) (nth x 2)])  iris-data) )
-(frequencies (map (fn [x] [(second x) (read-out (:pp pp-iris-virginica) (first x))]  ) (map (fn [x] [(first x) (nth x 2)])  iris-data)  ))
-
-
-
-(map (fn [x] [(second x) (read-out (:pp pp-iris-versicolor) (first x))]  )  (map (fn [x] [(first x) (nth x 3)])  iris-data) )
-(frequencies (map (fn [x] [(second x) (read-out (:pp pp-iris-versicolor) (first x))]  ) (map (fn [x] [(first x) (nth x 3)])  iris-data)  ))
-
-
-
-(read-out (:pp pp-iris) [5.1 3.5 1.4 0.2] )
-
-)
 
 
 

@@ -25,7 +25,7 @@
 ;;TODO Add diagnostics printing + addition of diagnostic data into pp with extra options, but not pp record properties
 
 
-;;TODO add hyper-learning... learn meny differently seeded pps, prune and keep only the best one.
+;;TODO add hyper-learning... learn meny differently seeded pps, prune and keep only the best one, be able to choose to boost if learning is not converging, this will remove one more hyper parameter.
 
 
 ;(m/set-current-implementation :persistent-vector)
@@ -185,6 +185,7 @@
        perceptron_value_fn    (fn [perceptron] (m/scalar (m/mmul perceptron z--input-vector)))   ;;had to add m/scalar here to allow other matrix implementations
        per-perceptron-totals  (doall (map perceptron_value_fn  (m/slices (:pperceptron pp))))   ]
   (pp-error-function pp per-perceptron-totals output target-output)))
+
 
 (defn epoch-errors "all error values over in input-outpet-seq" [pp input-output-seq]
   (map (fn [[input output]] (pp-error-function-standalone pp input output)) input-output-seq))
@@ -382,4 +383,4 @@
 
 
 #_(make-resonable-pp 3 0.5 true :seed 43 :size-boost 3)
-#_(make-resonable-pp 3 0.5 true)
+#_(println (make-resonable-pp 3 0.05 true))
