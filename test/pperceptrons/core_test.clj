@@ -259,10 +259,9 @@
 
 (deftest testing-on-some-analytical-funcion
 
-
  (is (=
       (sort (frequencies (pmap (fn [x] (:correctness (test-trainging (make-resonable-pp 2 0.126 false :seed x :size-boost 3)   ;;use boost to get more correct results if the input has more features
-                                                                     some-analytical-fn-data 500)           ;;epochs
+                                                                     some-analytical-fn-data 400)           ;;epochs
                                                      )) #_(range 42 53) (range 4)  )))
       '([1 4])))
 
