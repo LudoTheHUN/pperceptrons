@@ -6,6 +6,8 @@
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [net.mikera/core.matrix "0.22.0"]
                  [net.mikera/vectorz-clj "0.22.0"]]
-  :profiles {:dev {:dependencies [[criterium "0.4.3"]]}})
+  :plugins [[quickie "0.2.5"]]
+  :profiles {:dev {:dependencies [[criterium "0.4.3"]]
+                   :plugins [[quickie "0.2.5"]]}})
 
 
