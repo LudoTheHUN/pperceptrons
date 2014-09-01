@@ -1,4 +1,4 @@
-(defproject pperceptrons "0.1.0-SNAPSHOT"
+(defproject org.clojars.ludothehun/pperceptrons "0.1.0-SNAPSHOT"
   :description "A Clojure library designed to implement parallel perceptions"
   :url "https://github.com/LudoTheHUN/pperceptrons"
   :license {:name "Eclipse Public License"
