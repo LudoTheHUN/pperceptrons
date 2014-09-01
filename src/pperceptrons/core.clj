@@ -26,6 +26,7 @@
 
 
 ;;TODO add hyper-learning... learn meny differently seeded pps, prune and keep only the best one, be able to choose to boost if learning is not converging, this will remove one more hyper parameter.
+  ;;This is over reach and a seperate project in it's own right.
 
 
 ;(m/set-current-implementation :persistent-vector)
