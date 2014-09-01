@@ -220,6 +220,7 @@
 
 
 (defn eta-auto-tune [pp error-before error-after]
+  ;;Learning rate adjustment strategy. Aim is to learn as fast as possible while sustaining decreases in error.
   (assoc pp :eta--learning-rate
     (let [eta--learning-rate (:eta--learning-rate pp)]
       ;;(println eta--learning-rate)
@@ -228,8 +229,8 @@
             (and error-before error-after (> error-before error-after) (< eta--learning-rate 0.1))  ;what is reasonable maximum learning rate?
               (* eta--learning-rate 1.1)    ;1.1  ;;Error decreased, speed up learning a bit   ;WIP
             (and error-before error-after (< error-before error-after) (> eta--learning-rate 0.000000001))
-              (* eta--learning-rate 0.5)                                       ;WIP
-            :else eta--learning-rate))))  ;0.5 ;;Error increase, slow down learning
+              (* eta--learning-rate 0.5)  ;0.5 ;;Error increase, slow down learning;
+            :else eta--learning-rate))))
 ;
 
 ;;PLAN compute the error-value of orgiginal pp given inputs output, target-output, but do so over some history or recent input outputs, typically whole epoch
