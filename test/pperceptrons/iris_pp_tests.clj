@@ -6,6 +6,7 @@
 
 
 (def iris-data-vec
+  ;; of the form [[data] setosa virginica versicolor]
   (let [iris-rawdata  (slurp "./test/resources/iris.data")
         iris-lsplit   (clojure.string/split-lines iris-rawdata)
         iris-rsplit   (map (fn [x] (clojure.string/split x #",")) iris-lsplit)
@@ -40,9 +41,17 @@
 
 
 (deftest testing-iris-acuracy
-  (is (< 0.9 (:correctness pp-iris-setosa-t)))
-  (is (< 0.9 (:correctness pp-iris-virginica-t)))
-  (is (< 0.9 (:correctness pp-iris-versicolor-t)))
+  (is (< 0.95 (:correctness pp-iris-setosa-t)))
+  (is (< 0.95 (:correctness pp-iris-virginica-t)))
+  (is (< 0.95 (:correctness pp-iris-versicolor-t)))
+
+  (is (= 1.0  (read-out (:pp pp-iris-setosa-t) [5.1 3.5 1.4 0.2])))
+  (is (= -1.0 (read-out (:pp pp-iris-virginica-t) [5.1 3.5 1.4 0.2])))
+  (is (= -1.0 (read-out (:pp pp-iris-versicolor-t) [5.1 3.5 1.4 0.2])))
+
+  (is (= -1.0(read-out (:pp pp-iris-setosa-t) [5.5 2.4 3.7 1.0])))
+  (is (= -1.0(read-out (:pp pp-iris-virginica-t) [5.5 2.4 3.7 1.0])))
+  (is (= 1.0(read-out (:pp pp-iris-versicolor-t) [5.5 2.4 3.7 1.0])))
 
   )
 

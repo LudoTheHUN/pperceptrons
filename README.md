@@ -8,9 +8,9 @@ A parallel perceptron (pperceptron or pp's for short), trained via the p-delta l
 
 Read the paper to learn more.
 
-While epoch based utility functions are available, they all fall back to iterative on-line learning implemented in `train`.
+While epoch based learning utility functions are available, they all fall back to iterative on-line learning implemented in `train`.
 
-All meta parameters (like learning rate) are auto tuned, no parameter tuning is required.
+All meta parameters (like learning rate) are auto tuned, no parameter tuning is required (when training with `train-seq-epochs`). You just have to create an appropriate pp for your task.
 
 ## Usage
 
@@ -56,7 +56,7 @@ You can train the pp with
 ```Clojure
 (train pp
        (ffirst input) ;input
-       (second (first input)))  ;output
+       (second (first input)))  ;output to train with for that input
 ```
 
 but this is only one instance of training, over just 1 of the 4 training examples. It can takes 100's of epochs for the pp to settle to the intended answer
@@ -110,12 +110,13 @@ You can ask for any value on the input side. In this case, we see that the pp-tr
 
 Internally, for this most trivial of examples, the pp is represented by 3 by 3 matrix of Double's.
 
-WIP: a more advanced example would train on the Iris data set.
+tast/pperceptrons/iris_pp_tests.clj has an axample of training over the [Iris](http://en.wikipedia.org/wiki/Iris_flower_data_set) data set, where high accuracy is achived.
+
 
 Notes:
 
-- There are no guarantees of convergence or generalisation. Unless you feed a pp contradictory data, it should make progress towards a better approximation, given the epsilon of error you specified.
-- You may need to set `:size-boost` option to > 1 for complicated datasets to improve accuracy.
+- There are no guarantees of convergence or generalisation. Unless you feed a pp contradictory data, it should make progress towards a better approximation, given the epsilon of error you specified
+- A pp may be too small to learn a target function by default, you may need to set `:size-boost` option to > 1 for complicated datasets to improve accuracy.
 - If you want to create a pp manually, have a look at the `make-resonable-pp` implementation and the underlying record.
 
 
