@@ -1,6 +1,5 @@
 (ns pperceptrons.frugalize)
 
-
 (defn make-frugal-estimator [seed fage]
   (let [rnd (java.util.Random. seed)
         estimate (atom 10.0)]

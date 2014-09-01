@@ -14,6 +14,15 @@ All meta parameters (like learning rate) are auto tuned, no parameter tuning is 
 
 ## Usage
 
+add to project.clj
+
+`[org.clojars.ludothehun/pperceptrons "0.1.0-SNAPSHOT"]`
+
+require in the library:
+
+```(ns yourns
+  (:require [pperceptrons.core]))```
+
 Lets say you want to train a pperceptron to solve for the XOR function. Craft your data into the shape `[[[input1 input2 ...] ouput] ...]` . eg:
 
 ```Clojure
@@ -109,6 +118,10 @@ Notes:
 - You may need to set `:size-boost` option to > 1 for complicated datasets to improve accuracy.
 - If you want to create a pp manually, have a look at the `make-resonable-pp` implementation and the underlying record.
 
+
+## Feedback
+
+Please let me know if you find this at all useful and please feedback on github.
 
 ## License
 
