@@ -1,10 +1,10 @@
 # pperceptrons
 
-A Clojure library designed to implement a [pperceptron](http://www.igi.tugraz.at/psfiles/pdelta-journal.pdf) using core.matrix.
+A Clojure library designed to implement a [pperceptron](http://www.igi.tugraz.at/psfiles/pdelta-journal.pdf) and the P-Delta rule using [core.matrix](https://github.com/mikera/core.matrix).
 
 An alternative to traditional [neural networks](http://en.wikipedia.org/wiki/Artificial_neural_network) for [function approximation](http://en.wikipedia.org/wiki/Function_approximation).
 
-A parallel perceptron (pperceptron or pp's for short), trained via the p-delta learning rule, can approximate a function from ℝⁿ to the range [-1.0 , 1.0]. It can do this to arbitrary accuracy given appropriate parameters.
+A parallel perceptron (pperceptron or pp's for short), trained via the p-delta learning rule, can approximate a function from ℝⁿ to the range [-1.0 , 1.0]. It can do this to arbitrary accuracy given appropriate parameters. It was introduced by Peter Auer, Harald M. Burgsteiner, Wolfgang Maass in 2002 as per the paper [here](http://www.igi.tugraz.at/psfiles/pdelta-journal.pdf).
 
 Read the paper to learn more.
 
@@ -123,6 +123,8 @@ Notes:
 ## Feedback
 
 Please let me know if you find this at all useful and please feedback on github.
+
+http://www.igi.tugraz.at/maass/publications.html
 
 ## License
 
