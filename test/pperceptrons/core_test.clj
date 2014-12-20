@@ -354,16 +354,37 @@ pp
 
 
 
+;;Readme example
+
+(def pp
+ (make-resonable-pp
+   2       ;inputsize    ;how wide is the input, for this example, we have an input of size 2
+   0.501   ;epsilon      ;How accurate do you need to be. Use 0.501 for a binary pperceptron (which will return -1.0 or 1.0, when zerod? = false). Smaller epsilon will make the pp bigger internally.
+   false   ;zerod?       ;true makes the number of intrnal perceptrons even, so it will be possible to respond with 0.0 as the output.
+      ; & ops
+   ))
+
+
+(def pp-trained  (let [n-epochs 400]
+                    (train-seq-epochs pp data-2d-binary-XOR-data n-epochs)))
 
 
 
 
+(read-out pp-trained [-1.8  1.7])  ;=> -1.0
+(read-out pp-trained [ 1.8  1.7])  ;=>  1.0
+(read-out pp-trained [-1.8 -1.7])  ;=>  1.0
+(read-out pp-trained [ 1.8 -1.7])  ;=> -1.0
 
+(read-out pp-trained [-0.8  0.7])  ;=> -1.0
+(read-out pp-trained [ 0.8  0.7])  ;=>  1.0
+(read-out pp-trained [-0.8 -0.7])  ;=>  1.0
+(read-out pp-trained [ 0.8 -0.7])  ;=> -1.0
 
-
-
-
-
+(read-out pp-trained [-0.9  0.9])  ;=>  -1.0
+(read-out pp-trained [ 0.9  0.9])  ;=>  1.0
+(read-out pp-trained [-0.9 -0.9])  ;=>  1.0
+(read-out pp-trained [ 0.9 -0.9])  ;=> -1.0
 
 
 

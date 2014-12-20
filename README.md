@@ -97,15 +97,15 @@ You can ask for any value on the input side. In this case, we see that the pp-tr
 (read-out pp-trained [-1.8 -1.7])  ;=>  1.0
 (read-out pp-trained [ 1.8 -1.7])  ;=> -1.0
 
-(read-out pp-trained [-0.8  0.7])  ;=>  1.0
-(read-out pp-trained [ 0.8  0.7])  ;=> -1.0
-(read-out pp-trained [-0.8 -0.7])  ;=> -1.0
-(read-out pp-trained [ 0.8 -0.7])  ;=>  1.0
+(read-out pp-trained [-0.8  0.7])  ;=> -1.0
+(read-out pp-trained [ 0.8  0.7])  ;=>  1.0
+(read-out pp-trained [-0.8 -0.7])  ;=>  1.0
+(read-out pp-trained [ 0.8 -0.7])  ;=> -1.0
 
-(read-out pp-trained [-0.9  0.9])  ;=>  1.0
-(read-out pp-trained [ 0.9  0.9])  ;=> -1.0
-(read-out pp-trained [-0.9 -0.9])  ;=> -1.0
-(read-out pp-trained [ 0.9 -0.9])  ;=>  1.0
+(read-out pp-trained [-0.9  0.9])  ;=> -1.0
+(read-out pp-trained [ 0.9  0.9])  ;=>  1.0
+(read-out pp-trained [-0.9 -0.9])  ;=>  1.0
+(read-out pp-trained [ 0.9 -0.9])  ;=> -1.0
 ```
 
 Internally, for this most trivial of examples, the pp is represented by 3 by 3 matrix of Double's.
